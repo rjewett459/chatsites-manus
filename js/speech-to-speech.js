@@ -2,7 +2,11 @@
 // This file enhances the WebRTC implementation with true speech-to-speech capabilities
 
 // Global variables
-let audioContext = null;
+if (!window.audioContext) {
+  window.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+}
+const audioContext = window.audioContext;
+
 let audioQueue = [];
 let isPlaying = false;
 
