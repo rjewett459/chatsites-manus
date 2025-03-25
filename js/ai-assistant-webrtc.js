@@ -272,8 +272,15 @@ function displayWelcomeMessage() {
   displayMessage('assistant', welcomeMessage);
 }
 
-// Initialize once DOM is fully loaded
-document.addEventListener('DOMContentLoaded', initializeAssistant);
+document.addEventListener('DOMContentLoaded', () => {
+  const checkInterval = setInterval(() => {
+    if (window.openAIRealtimeAPI && window.openAIRealtimeAPI.initialize) {
+      clearInterval(checkInterval);
+      initializeAssistant();
+    }
+  }, 100);
+});
+
 
 // Export for external use
 window.aiAssistant = {
