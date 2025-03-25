@@ -1,0 +1,16 @@
+.logo {
+    display: flex;
+    align-items: center;
+}
+
+.logo img {
+    height: 60px;
+    width: auto;
+    margin-right: 10px;
+}
+
+/* Adjust footer logo size */
+.footer-logo img {
+    height: 40px;
+    width: auto;
+}

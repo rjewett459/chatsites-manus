@@ -1,0 +1,27 @@
+/* Additional styles for product placeholder images */
+.product-card img, .property-image, .product-image, .course-image, .service-icon, .topic-icon {
+    background-color: rgba(246, 82, 40, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #f65228;
+    font-size: 2rem;
+}
+
+/* Placeholder image content */
+.product-card img::before, .property-image::before, .product-image::before, .course-image::before {
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+}
+
+.property-image::before {
+    content: '\f015'; /* home icon */
+}
+
+.product-image::before {
+    content: '\f07a'; /* shopping cart icon */
+}
+
+.course-image::before {
+    content: '\f19d'; /* graduation cap icon */
+}

@@ -1,0 +1,348 @@
+/* Explainer Section Styles */
+
+#about {
+    position: relative;
+    overflow: hidden;
+    background-color: #f8fafc;
+}
+
+#about::before {
+    content: '';
+    position: absolute;
+    top: -10%;
+    right: -10%;
+    width: 60%;
+    height: 60%;
+    background-image: radial-gradient(circle at 70% 30%, rgba(246, 82, 40, 0.05) 0%, transparent 70%);
+    z-index: 0;
+}
+
+.explainer-content {
+    position: relative;
+    z-index: 1;
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.explainer-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 1rem;
+}
+
+.tab-button {
+    background-color: transparent;
+    border: none;
+    padding: 0.8rem 1.2rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-color);
+    cursor: pointer;
+    border-radius: var(--border-radius);
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.tab-button::after {
+    content: '';
+    position: absolute;
+    bottom: -1rem;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background-color: var(--primary-color);
+    transform: scaleX(0);
+    transform-origin: center;
+    transition: transform 0.3s ease;
+}
+
+.tab-button:hover {
+    background-color: rgba(246, 82, 40, 0.05);
+}
+
+.tab-button.active {
+    color: var(--primary-color);
+}
+
+.tab-button.active::after {
+    transform: scaleX(1);
+}
+
+.tab-content {
+    background-color: white;
+    border-radius: var(--border-radius);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.tab-pane {
+    display: none;
+    padding: 2rem;
+}
+
+.tab-pane.active {
+    display: block;
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+.tab-pane h3 {
+    color: var(--primary-color);
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+}
+
+.tab-pane p {
+    margin-bottom: 1rem;
+    line-height: 1.6;
+}
+
+.tab-pane ul, .tab-pane ol {
+    margin-bottom: 1.5rem;
+    padding-left: 1.5rem;
+}
+
+.tab-pane li {
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+}
+
+.tab-pane img {
+    max-width: 100%;
+    border-radius: var(--border-radius);
+    margin: 1.5rem 0;
+}
+
+.tab-pane .highlight {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.tab-pane .note {
+    background-color: #f1f5f9;
+    padding: 1rem;
+    border-left: 3px solid var(--primary-color);
+    margin: 1.5rem 0;
+    border-radius: 0 var(--border-radius) var(--border-radius) 0;
+}
+
+.tab-pane .cta {
+    margin-top: 2rem;
+    text-align: center;
+}
+
+.tab-pane .cta-button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.tab-pane .cta-button:hover {
+    background-color: var(--primary-dark);
+}
+
+/* Enhanced tab content layout */
+.tab-content-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+}
+
+@media (min-width: 768px) {
+    .tab-content-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.tab-content-image {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f1f5f9;
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    min-height: 300px;
+}
+
+.tab-content-image img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.tab-content-image i {
+    font-size: 5rem;
+    color: var(--primary-color);
+}
+
+.tab-content-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Feature list */
+.feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0;
+}
+
+.feature-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.2rem;
+}
+
+.feature-icon {
+    background-color: rgba(246, 82, 40, 0.1);
+    color: var(--primary-color);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.feature-text {
+    flex: 1;
+}
+
+.feature-title {
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+}
+
+.feature-description {
+    color: #64748b;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+/* Timeline */
+.timeline {
+    position: relative;
+    margin: 2rem 0;
+    padding-left: 2rem;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+    background-color: #e2e8f0;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 2rem;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -2rem;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    border: 3px solid white;
+    box-shadow: 0 0 0 3px rgba(246, 82, 40, 0.2);
+}
+
+.timeline-date {
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.timeline-content {
+    background-color: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.timeline-title {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-size: 1.2rem;
+}
+
+.timeline-description {
+    margin-bottom: 0;
+    color: #64748b;
+}
+
+/* Comparison table */
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 2rem 0;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.comparison-table th, .comparison-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.comparison-table th {
+    background-color: #f1f5f9;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.comparison-table tr:last-child td {
+    border-bottom: none;
+}
+
+.comparison-table td:first-child {
+    font-weight: 500;
+}
+
+.comparison-check {
+    color: #16a34a;
+    font-size: 1.2rem;
+}
+
+.comparison-x {
+    color: #dc2626;
+    font-size: 1.2rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .explainer-tabs {
+        overflow-x: auto;
+        padding-bottom: 1rem;
+    }
+    
+    .tab-button {
+        white-space: nowrap;
+    }
+    
+    .tab-pane {
+        padding: 1.5rem;
+    }
+}

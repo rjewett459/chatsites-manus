@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatSites Portal - WebRTC Test</title>
+    <link rel="icon" href="../favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --chatsites-orange: #f65228;
+            --chatsites-dark: #333;
+            --chatsites-light: #f5f5f5;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: var(--chatsites-light);
+            color: var(--chatsites-dark);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: var(--chatsites-orange);
+            margin-bottom: 10px;
+        }
+        
+        .test-section {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .test-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: var(--chatsites-orange);
+        }
+        
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        button {
+            background-color: var(--chatsites-orange);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #e04820;
+        }
+        
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+        }
+        
+        .log-container {
+            height: 200px;
+            overflow-y: auto;
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin-top: 15px;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        
+        .log-time {
+            color: #888;
+            font-size: 0.8rem;
+        }
+        
+        .log-info {
+            color: #0066cc;
+        }
+        
+        .log-success {
+            color: #008800;
+        }
+        
+        .log-error {
+            color: #cc0000;
+        }
+        
+        .orb-container {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        
+        .orb {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: var(--chatsites-orange);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(246, 82, 40, 0.5);
+            animation: pulse 2s infinite ease-in-out;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(246, 82, 40, 0.7);
+            }
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 15px rgba(246, 82, 40, 0);
+            }
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(246, 82, 40, 0);
+            }
+        }
+        
+        .orb.listening {
+            animation: pulse 1s infinite ease-in-out;
+            background-color: #00cc00;
+        }
+        
+        .orb.processing {
+            animation: pulse 0.5s infinite ease-in-out;
+            background-color: #ffcc00;
+        }
+        
+        .orb.speaking {
+            animation: pulse 1.5s infinite ease-in-out;
+            background-color: #0088cc;
+        }
+        
+        .orb.error {
+            animation: shake 0.5s;
+            background-color: #cc0000;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        
+        .chat-container {
+            margin-top: 20px;
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .message-container {
+            height: 300px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+        
+        .message {
+            display: flex;
+            margin-bottom: 15px;
+        }
+        
+        .user-message {
+            justify-content: flex-end;
+        }
+        
+        .assistant-message {
+            justify-content: flex-start;
+        }
+        
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+        }
+        
+        .user-message .avatar {
+            order: 2;
+            margin-right: 0;
+            margin-left: 10px;
+            background-color: var(--chatsites-orange);
+            color: white;
+        }
+        
+        .message-text {
+            max-width: 70%;
+            padding: 10px;
+            border-radius: 10px;
+            background-color: #e6e6e6;
+        }
+        
+        .user-message .message-text {
+            background-color: var(--chatsites-orange);
+            color: white;
+        }
+        
+        .input-container {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .input-container input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        
+        .input-container button {
+            padding: 10px 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>ChatSites Portal - WebRTC Test</h1>
+            <p>Testing OpenAI Realtime API with WebRTC and Speech-to-Speech functionality</p>
+        </header>
+        
+        <div class="test-section">
+            <div class="test-title">1. Initialize WebRTC Connection</div>
+            <div class="test-controls">
+                <button id="init-btn">Initialize Connection</button>
+                <button id="close-btn" disabled>Close Connection</button>
+            </div>
+            <div class="status" id="init-status">Status: Not initialized</div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">2. Speech-to-Speech Test</div>
+            <div class="orb-container">
+                <div class="orb" id="test-orb"></div>
+            </div>
+            <div class="test-controls">
+                <button id="mic-btn" disabled>Start Listening</button>
+                <button id="stop-btn" disabled>Stop Listening</button>
+            </div>
+            <div class="status" id="speech-status">Status: Not ready</div>
+        </div>
+        
+        <div class="chat-container">
+            <div class="message-container" id="message-container"></div>
+            <div class="input-container">
+                <input type="text" id="text-input" placeholder="Type a message..." disabled>
+                <button id="send-btn" disabled>Send</button>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">Log</div>
+            <div class="log-container" id="log-container"></div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let ephemeralKey = null;
+        let currentState = 'idle';
+        let transcriptText = '';
+        
+        // DOM elements
+        const initBtn = document.getElementById('init-btn');
+        const closeBtn = document.getElementById('close-btn');
+        const micBtn = document.getElementById('mic-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const sendBtn = document.getElementById('send-btn');
+        const textInput = document.getElementById('text-input');
+        const initStatus = document.getElementById('init-status');
+        const speechStatus = document.getElementById('speech-status');
+        const logContainer = document.getElementById('log-container');
+        const messageContainer = document.getElementById('message-container');
+        const testOrb = document.getElementById('test-orb');
+        
+        // Add log entry
+        function addLog(message, type = 'info') {
+            const logEntry = document.createElement('div');
+            logEntry.classList.add('log-entry', `log-${type}`);
+            
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString();
+            
+            logEntry.innerHTML = `<span class="log-time">[${timeStr}]</span> ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        // Update orb state
+        function updateOrbState(state) {
+            testOrb.classList.remove('idle', 'listening', 'processing', 'speaking', 'error');
+            testOrb.classList.add(state);
+        }
+        
+        // Update status
+        function updateStatus(state, message = '') {
+            currentState = state;
+            
+            // Update orb
+            updateOrbState(state);
+            
+            // Update status displays
+            switch (state) {
+                case 'idle':
+                    speechStatus.textContent = 'Status: Idle';
+                    break;
+                case 'ready':
+                    speechStatus.textContent = 'Status: Ready';
+                    micBtn.disabled = false;
+                    textInput.disabled = false;
+                    sendBtn.disabled = false;
+                    stopBtn.disabled = true;
+                    break;
+                case 'listening':
+                    speechStatus.textContent = 'Status: Listening...';
+                    micBtn.disabled = true;
+                    stopBtn.disabled = false;
+                    break;
+                case 'processing':
+                    speechStatus.textContent = 'Status: Processing...';
+                    micBtn.disabled = true;
+                    stopBtn.disabled = true;
+                    break;
+                case 'speaking':
+                    speechStatus.textContent = 'Status: Speaking...';
+                    micBtn.disabled = true;
+                    stopBtn.disabled = true;
+                    break;
+                case 'error':
+                    speechStatus.textContent = `Status: Error - ${message}`;
+                    micBtn.disabled = false;
+                    stopBtn.disabled = true;
+                    break;
+                case 'connected':
+                    initStatus.textContent = 'Status: Connected';
+                    closeBtn.disabled = false;
+                    initBtn.disabled = true;
+                    addLog('WebRTC connection established', 'success');
+                    break;
+                case 'disconnected':
+                    initStatus.textContent = 'Status: Disconnected';
+                    closeBtn.disabled = true;
+                    initBtn.disabled = false;
+                    micBtn.disabled = true;
+                    stopBtn.disabled = true;
+                    textInput.disabled = true;
+                    sendBtn.disabled = true;
+                    addLog('WebRTC connection closed', 'info');
+                    break;
+            }
+        }
+        
+        // Display message
+        function displayMessage(sender, text) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', `${sender}-message`);
+            
+            const avatarElement = document.createElement('div');
+            avatarElement.classList.add('avatar');
+            
+            if (sender === 'assistant') {
+                avatarElement.innerHTML = '<i class="fas fa-robot"></i>';
+            } else {
+                avatarElement.innerHTML = '<i class="fas fa-user"></i>';
+            }
+            
+            const messageTextElement = document.createElement('div');
+            messageTextElement.classList.add('message-text');
+            messageTextElement.textContent = text;
+            
+            messageElement.appendChild(avatarElement);
+            messageElement.appendChild(messageTextElement);
+            
+            messageContainer.appendChild(messageElement);
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        }
+        
+        // Update transcript
+        function updateTranscript(text) {
+            transcriptText += text;
+            
+            // Update existing message or create new one
+            const lastMessage = messageContainer.lastElementChild;
+            if (lastMessage && lastMessage.classList.contains('user-message')) {
+                const messageText = lastMessage.querySelector('.message-text');
+                messageText.textContent = transcriptText;
+            } else {
+                displayMessage('user', transcriptText);
+            }
+            
+            addLog(`Transcript update: ${text}`, 'info');
+        }
+        
+        // Handle response
+        function handleResponse(text) {
+            addLog(`Response received: ${text}`, 'success');
+            displayMessage('assistant', text);
+            transcriptText = '';
+        }
+        
+        // Get ephemeral key
+        async function getEphemeralKey() {
+            try {
+                addLog('Requesting ephemeral key from server...', 'info');
+                
+                // In a real implementation, this would be a server request
+                // For testing, we'll simulate it
+                addLog('Using simulated ephemeral key for testing', 'info');
+                ephemeralKey = 'simulated-ephemeral-key';
+                
+                return true;
+            } catch (error) {
+                addLog(`Error getting ephemeral key: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        // Initialize WebRTC connection
+        async function initializeConnection() {
+            try {
+                addLog('Initializing WebRTC connection...', 'info');
+                
+                // Get ephemeral key
+                const keySuccess = await getEphemeralKey();
+                if (!keySuccess) {
+                    throw new Error('Failed to get ephemeral key');
+                }
+                
+                // In a real implementation, this would initialize the WebRTC connection
+                // For testing, we'll simulate it
+                setTimeout(() => {
+                    updateStatus('connected');
+                    updateStatus('ready');
+                    addLog('WebRTC connection initialized with simulated ephemeral key', 'success');
+                }, 1500);
+                
+                return true;
+            } catch (error) {
+                addLog(`Error initializing connection: ${error.message}`, 'error');
+                updateStatus('error', error.message);
+                return false;
+            }
+        }
+        
+        // Close WebRTC connection
+        function closeConnection() {
+            try {
+                addLog('Closing WebRTC connection...', 'info');
+                
+                // In a real implementation, this would close the WebRTC connection
+                // For testing, we'll simulate it
+                setTimeout(() => {
+                    updateStatus('disconnected');
+                }, 500);
+                
+                return true;
+            } catch (error) {
+                addLog(`Error closing connection: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        // Start listening
+        function startListening() {
+            try {
+                addLog('Starting listening...', 'info');
+                
+                // In a real implementation, this would start the WebRTC audio stream
+                // For testing, we'll simulate it
+                updateStatus('listening');
+                
+                // Simulate speech detection after 3 seconds
+                setTimeout(() => {
+                    updateTranscript('Hello, this is a test of the speech recognition.');
+                    
+                    // Simulate speech end after 2 more seconds
+                    setTimeout(() => {
+                        updateStatus('processing');
+                        
+                        // Simulate response after 1 more second
+                        setTimeout(() => {
+                            updateStatus('speaking');
+                            handleResponse('Hi there! I received your test message. The speech recognition is working correctly. Is there anything specific you would like to know about ChatSites?');
+                            
+                            // Simulate speaking end
+                            setTimeout(() => {
+                                updateStatus('ready');
+                            }, 2000);
+                        }, 1000);
+                    }, 2000);
+                }, 3000);
+                
+                return true;
+            } catch (error) {
+                addLog(`Error starting listening: ${error.message}`, 'error');
+                updateStatus('error', error.message);
+                return false;
+            }
+        }
+        
+        // Stop listening
+        function stopListening() {
+            try {
+                addLog('Stopping listening...', 'info');
+                
+                // In a real implementation, this would stop the WebRTC audio stream
+                // For testing, we'll simulate it
+                updateStatus('processing');
+                
+                // Simulate response after 1 second
+                setTimeout(() => {
+                    updateStatus('speaking');
+                    handleResponse('I heard you say: ' + transcriptText);
+                    
+                    // Simulate speaking end
+                    setTimeout(() => {
+                        updateStatus('ready');
+                    }, 2000);
+                }, 1000);
+                
+                return true;
+            } catch (error) {
+                addLog(`Error stopping listening: ${error.message}`, 'error');
+                updateStatus('error', error.message);
+                return false;
+            }
+        }
+        
+        // Send text message
+        function sendTextMessage() {
+            try {
+                const text = textInput.value.trim();
+                
+                if (!text) {
+                    return false;
+                }
+                
+                addLog(`Sending text message: ${text}`, 'info');
+                
+                // Display user message
+                displayMessage('user', text);
+                
+                // Clear input field
+                textInput.value = '';
+                
+                // In a real implementation, this would send the text via WebRTC
+                // For testing, we'll simulate it
+                updateStatus('processing');
+                
+                // Simulate response after 1 second
+                setTimeout(() => {
+                    updateStatus('speaking');
+                    handleResponse('I received your text message: "' + text + '". This is a simulated response for testing purposes.');
+                    
+                    // Simulate speaking end
+                    setTimeout(() => {
+                        updateStatus('ready');
+                    }, 2000);
+                }, 1000);
+                
+                return true;
+            } catch (error) {
+                addLog(`Error sending text message: ${error.message}`, 'error');
+                updateStatus('error', error.message);
+                return false;
+            }
+        }
+        
+        // Event listeners
+        initBtn.addEventListener('click', initializeConnection);
+        closeBtn.addEventListener('click', closeConnection);
+        micBtn.addEventListener('click', startListening);
+        stopBtn.addEventListener('click', stopListening);
+        sendBtn.addEventListener('click', sendTextMessage);
+        textInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendTextMessage();
+            }
+        });
+        
+        // Initialize
+        addLog('WebRTC test page loaded', 'info');
+        updateStatus('idle');
+    </script>
+</body>
+</html>

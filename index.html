@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatSites - Next-Generation Conversational Website Platform</title>
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/hero-styles.css">
+    <link rel="stylesheet" href="css/placeholder-styles.css">
+    <link rel="stylesheet" href="css/dynamic-asset.css">
+    <link rel="stylesheet" href="css/use-case-cards.css">
+    <link rel="stylesheet" href="css/real-time-editing.css">
+    <link rel="stylesheet" href="css/explainer-section.css">
+    <link rel="stylesheet" href="css/call-to-action.css">
+    <link rel="stylesheet" href="css/process-explanation.css">
+    <link rel="stylesheet" href="css/logo-styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <img src="images/branding/logo.png" alt="ChatSites Logo" id="logo">
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="features/index.html">Features</a></li>
+                    <li><a href="#use-cases">Use Cases</a></li>
+                    <li><a href="#about">About</a></li>
+                    <li><a href="#demo" class="cta-button">Try Demo</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section with Portal Demo -->
+        <section id="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <h2>Transform Your Website with <span class="highlight">Voice-First</span> AI</h2>
+                    <p>Experience the future of customer engagement with ChatSites Portal - an immersive, interactive interface powered by advanced AI.</p>
+                    <div class="cta-buttons">
+                        <button class="primary-button" id="start-demo">Try the Portal Demo</button>
+                        <button class="secondary-button">Learn More</button>
+                    </div>
+                </div>
+                <div class="portal-demo-container">
+                    <div class="portal-frame">
+                        <div class="portal-header">
+                            <div class="portal-controls">
+                                <div class="portal-control"></div>
+                                <div class="portal-control"></div>
+                                <div class="portal-control"></div>
+                            </div>
+                            <div class="portal-title">ChatSites Portal</div>
+                        </div>
+                        <div class="portal-content">
+                            <div id="ai-assistant" class="hidden">
+                                <div class="orb-container">
+                                    <div class="orb" id="ai-orb">
+                                        <div class="orb-pulse"></div>
+                                    </div>
+                                </div>
+                                <div class="assistant-messages" id="assistant-messages">
+                                    <div class="welcome-message">
+                                        <p>Hello! I'm your ChatSites assistant. How can I help you today?</p>
+                                    </div>
+                                </div>
+                                <div class="user-input">
+                                    <input type="text" id="text-input" placeholder="Type your message or press the mic to speak...">
+                                    <button id="voice-input-button"><i class="fas fa-microphone"></i></button>
+                                    <button id="send-button"><i class="fas fa-paper-plane"></i></button>
+                                </div>
+                            </div>
+                            <div id="portal-welcome" class="active">
+                                <h3>Welcome to the ChatSites Portal Demo</h3>
+                                <p>Experience the future of customer engagement with our AI-powered conversational interface.</p>
+                                <button id="activate-portal" class="primary-button">Activate Portal</button>
+                            </div>
+                            <div id="dynamic-content" class="hidden">
+                                <!-- Dynamic content will be inserted here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Use-Case Walkthrough Cards -->
+        <section id="use-cases">
+            <div class="container">
+                <h2>Revolutionize Customer Interactions Across Industries</h2>
+                <p class="section-description">Discover how ChatSites transforms customer experiences in various business sectors.</p>
+                <div class="use-case-cards">
+                    <div class="use-case-card" data-use-case="real-estate">
+                        <div class="card-icon"><i class="fas fa-home"></i></div>
+                        <h3>Real Estate</h3>
+                        <p>Virtual property tours, instant property information, and appointment scheduling.</p>
+                        <button class="try-use-case">Try Demo</button>
+                    </div>
+                    <div class="use-case-card" data-use-case="ecommerce">
+                        <div class="card-icon"><i class="fas fa-shopping-cart"></i></div>
+                        <h3>E-commerce</h3>
+                        <p>Personalized product recommendations, inventory checks, and seamless checkout.</p>
+                        <button class="try-use-case">Try Demo</button>
+                    </div>
+                    <div class="use-case-card" data-use-case="education">
+                        <div class="card-icon"><i class="fas fa-graduation-cap"></i></div>
+                        <h3>Coaching / Education</h3>
+                        <p>Interactive learning experiences, course enrollment, and personalized guidance.</p>
+                        <button class="try-use-case">Try Demo</button>
+                    </div>
+                    <div class="use-case-card" data-use-case="support">
+                        <div class="card-icon"><i class="fas fa-headset"></i></div>
+                        <h3>Customer Support</h3>
+                        <p>24/7 intelligent assistance, troubleshooting, and seamless human handoff.</p>
+                        <button class="try-use-case">Try Demo</button>
+                    </div>
+                    <div class="use-case-card" data-use-case="healthcare">
+                        <div class="card-icon"><i class="fas fa-heartbeat"></i></div>
+                        <h3>Healthcare</h3>
+                        <p>Appointment scheduling, symptom assessment, and patient information access.</p>
+                        <button class="try-use-case">Try Demo</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Real-Time Editing Demo -->
+        <section id="real-time-editing">
+            <div class="container">
+                <h2>Edit Your Website with Voice Commands</h2>
+                <p class="section-description">Experience the simplicity of updating your website content through natural conversation.</p>
+                <div class="editing-demo">
+                    <div class="editing-interface">
+                        <div class="editing-preview">
+                            <div class="preview-header">
+                                <h4>Business Hours</h4>
+                                <span class="edit-status">Current</span>
+                            </div>
+                            <div class="preview-content" id="editable-content">
+                                <p>Monday - Friday: 8am - 6pm</p>
+                                <p>Saturday: 10am - 4pm</p>
+                                <p>Sunday: Closed</p>
+                            </div>
+                        </div>
+                        <div class="editing-controls">
+                            <p>Try saying: "Update my hours to 9am–5pm on weekdays"</p>
+                            <div class="voice-command">
+                                <button id="edit-voice-command"><i class="fas fa-microphone"></i> Voice Command</button>
+                                <input type="text" id="edit-text-command" placeholder="Or type your edit command here...">
+                                <button id="send-edit-command"><i class="fas fa-paper-plane"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="editing-result hidden" id="editing-result">
+                        <div class="result-header">
+                            <h4>Business Hours</h4>
+                            <span class="edit-status updated">Updated</span>
+                        </div>
+                        <div class="result-content" id="updated-content">
+                            <!-- Updated content will appear here -->
+                        </div>
+                        <div class="success-message">
+                            <i class="fas fa-check-circle"></i>
+                            <p>Your website has been updated successfully!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Explainer Section -->
+        <section id="about">
+            <div class="container">
+                <h2>What is ChatSites<span class="trademark">™</span>?</h2>
+                <div class="explainer-content">
+                    <div class="explainer-tabs">
+                        <button class="tab-button active" data-tab="core-concept">Core Concept & Vision</button>
+                        <button class="tab-button" data-tab="hybrid-interface">Hybrid Voice + Text Interface</button>
+                        <button class="tab-button" data-tab="mobile-first">Mobile-first & No-Code Editing</button>
+                        <button class="tab-button" data-tab="future">Future of Voice Interaction</button>
+                        <button class="tab-button" data-tab="bridge">Bridging Today & Tomorrow</button>
+                    </div>
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="core-concept">
+                            <h3>Core Concept & Vision</h3>
+                            <p>ChatSites represents a paradigm shift in how businesses connect with their customers online. Our vision is to transform static websites into dynamic, conversational experiences that engage visitors in natural, human-like interactions.</p>
+                            <p>By leveraging cutting-edge AI technology, ChatSites Portal creates an immersive interface that understands user intent, remembers context, and delivers personalized experiences that evolve with each interaction.</p>
+                        </div>
+                        <div class="tab-pane" id="hybrid-interface">
+                            <h3>Hybrid Voice + Text Interface</h3>
+                            <p>ChatSites Portal combines the convenience of voice interaction with the reliability of text communication. Users can seamlessly switch between speaking and typing, ensuring accessibility and flexibility across different contexts and environments.</p>
+                            <p>Our advanced natural language processing capabilities enable the Portal to understand nuanced requests, detect emotions, and respond appropriately, creating a truly conversational experience.</p>
+                        </div>
+                        <div class="tab-pane" id="mobile-first">
+                            <h3>Mobile-first & No-Code Editing</h3>
+                            <p>Built with a mobile-first approach, ChatSites ensures optimal performance across all devices. The intuitive no-code editing interface allows businesses to update content, add new features, and customize their Portal through simple voice commands or text inputs.</p>
+                            <p>This democratizes website management, enabling anyone in your organization to make updates without technical expertise or developer assistance.</p>
+                        </div>
+                        <div class="tab-pane" id="future">
+                            <h3>Future of Voice Interaction</h3>
+                            <p>As voice technology continues to evolve, ChatSites positions your business at the forefront of this transformation. By embracing voice-first interaction now, you prepare for a future where voice commands become the primary way users interact with digital interfaces.</p>
+                            <p>Our continuous innovation ensures your ChatSite evolves alongside emerging technologies, maintaining your competitive edge in customer engagement.</p>
+                        </div>
+                        <div class="tab-pane" id="bridge">
+                            <h3>Bridging Today & Tomorrow</h3>
+                            <p>ChatSites serves as the perfect bridge between traditional websites and the AI-driven interfaces of tomorrow. While maintaining all the functionality of conventional websites, it introduces conversational capabilities that align with changing user expectations.</p>
+                            <p>This evolutionary approach ensures a smooth transition for both businesses and their customers, combining familiar elements with innovative features to create a truly next-generation web experience.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Call to Action -->
+        <section id="cta">
+            <div class="container">
+                <h2>Ready to Transform Your Website?</h2>
+                <p>Join the conversational revolution and create a ChatSite that engages your customers like never before.</p>
+                <div class="cta-buttons">
+                    <button class="primary-button">Build Your ChatSite</button>
+                    <button class="secondary-button" id="watch-demo-button">Watch Demo <i class="fas fa-play-circle"></i></button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Process Explanation -->
+        <section id="process">
+            <div class="process-container">
+                <div class="process-title">
+                    <h2>Behind the Scenes</h2>
+                    <p>Discover the technology powering the ChatSites experience and how we built this next-generation conversational platform.</p>
+                </div>
+                <div class="process-steps">
+                    <div class="process-step">
+                        <div class="step-number">01</div>
+                        <div class="step-content">
+                            <h3>AI-driven Portal Generation</h3>
+                            <p>ChatSites leverages advanced AI models to create personalized, context-aware conversational experiences tailored to your business needs and brand identity.</p>
+                            <button class="step-toggle">Show Details <i class="fas fa-chevron-down"></i></button>
+                            <div class="step-details">
+                                <h4>Key Technologies</h4>
+                                <ul>
+                                    <li><i class="fas fa-check-circle"></i> <span>GPT-4o multimodal models for understanding text, voice, and visual inputs</span></li>
+                                    <li><i class="fas fa-check-circle"></i> <span>Custom-trained AI assistants with business-specific knowledge</span></li>
+                                    <li><i class="fas fa-check-circle"></i> <span>Automated portal generation from business data and preferences</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="process-step">
+                        <div class="step-number">02</div>
+                        <div class="step-content">
+                            <h3>Integrated Technologies</h3>
+                            <p>Our platform combines large language models (LLM), text-to-speech (TTS), speech-to-text (STT), and seamless API integrations to deliver a cohesive, responsive user experience.</p>
+                            <button class="step-toggle">Show Details <i class="fas fa-chevron-down"></i></button>
+                            <div class="step-details">
+                                <h4>Technology Stack</h4>
+                                <ul>
+                                    <li><i class="fas fa-check-circle"></i> <span>OpenAI GPT-4o for natural language understanding and generation</span></li>
+                                    <li><i class="fas fa-check-circle"></i> <span>Advanced TTS engines for lifelike voice synthesis</span></li>
+                                    <li><i class="fas fa-check-circle"></i> <span>High-accuracy STT with real-time transcription</span></li>
+                                    <li><i class="fas fa-check-circle"></i> <span>WebRTC for low-latency audio streaming</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="process-step">
+                        <div class="step-number">03</div>
+                        <div class="step-content">
+                            <h3>Real-time Interaction Framework</h3>
+                            <p>Built on OpenAI's Realtime API, ChatSites enables instantaneous, multimodal interactions that feel natural and responsive, eliminating the lag typically associated with AI systems.</p>
+                            <button class="step-toggle">Show Details <i class="fas fa-chevron-down"></i></button>
+                            <div class="step-details">
+                                <h4>Framework Components</h4>
+                                <ul>
+                                    <li><i class="fas fa-check-circle"></i> <span>WebSocket connections for persistent, bidirectional communication</span></li>
+                                    <li><i class="fas fa-check-circle"></i> <span>Stream processing for immediate response generation</span></li>
+                                    <li><i class="fas fa-check-circle"></i> <span>Adaptive response prioritization based on context</span></li>
+                                    <li><i class="fas fa-check-circle"></i> <span>Parallel processing of multiple input/output modalities</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="process-step">
+                        <div class="step-number">04</div>
+                        <div class="step-content">
+                            <h3>Custom Branding & Modular Setup</h3>
+                            <p>Every ChatSite is fully customizable with your brand colors, logo, and voice personality, while our modular architecture allows for easy expansion and integration with your existing systems.</p>
+                            <button class="step-toggle">Show Details <i class="fas fa-chevron-down"></i></button>
+                            <div class="step-details">
+                                <h4>Customization Options</h4>
+                                <ul>
+                                    <li><i class="fas fa-check-circle"></i> <span>Brand color palette integration throughout the interface</span></li>
+                                    <li><i class="fas fa-check-circle"></i> <span>Custom voice selection and personality tuning</span></li>
+                                    <li><i class="fas fa-check-circle"></i> <span>Modular component architecture for feature selection</span></li>
+                                    <li><i class="fas fa-check-circle"></i> <span>API-first design for seamless integration with existing systems</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="process-step">
+                        <div class="step-number">05</div>
+                        <div class="step-content">
+                            <h3>No-code Customization</h3>
+                            <p>Update your ChatSite through natural language commands without technical expertise, empowering your team to maintain an up-to-date, engaging customer experience.</p>
+                            <button class="step-toggle">Show Details <i class="fas fa-chevron-down"></i></button>
+                            <div class="step-details">
+                                <h4>No-code Features</h4>
+                                <ul>
+                                    <li><i class="fas fa-check-circle"></i> <span>Natural language content editing and updates</span></li>
+                                    <li><i class="fas fa-check-circle"></i> <span>Voice command interface for site management</span></li>
+                                    <li><i class="fas fa-check-circle"></i> <span>AI-assisted content generation and optimization</span></li>
+                                    <li><i class="fas fa-check-circle"></i> <span>Automated deployment of changes without technical knowledge</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tech-stack">
+                    <div class="tech-item">
+                        <div class="tech-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div class="tech-name">GPT-4o</div>
+                        <div class="tech-description">Multimodal AI model powering natural conversations</div>
+                    </div>
+                    <div class="tech-item">
+                        <div class="tech-icon">
+                            <i class="fas fa-microphone"></i>
+                        </div>
+                        <div class="tech-name">Voice API</div>
+                        <div class="tech-description">Real-time speech processing and synthesis</div>
+                    </div>
+                    <div class="tech-item">
+                        <div class="tech-icon">
+                            <i class="fas fa-code"></i>
+                        </div>
+                        <div class="tech-name">WebRTC</div>
+                        <div class="tech-description">Low-latency audio streaming technology</div>
+                    </div>
+                    <div class="tech-item">
+                        <div class="tech-icon">
+                            <i class="fas fa-plug"></i>
+                        </div>
+                        <div class="tech-name">API Integration</div>
+                        <div class="tech-description">Seamless connection with business systems</div>
+                    </div>
+                    <div class="tech-item">
+                        <div class="tech-icon">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <div class="tech-name">Mobile-first</div>
+                        <div class="tech-description">Responsive design for all devices</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Call to Action Section -->
+        <section id="cta">
+            <div class="cta-container">
+                <h2 class="cta-title">Build Your Own ChatSite Today</h2>
+                <p class="cta-description">Transform your website into an interactive, voice-first experience that engages customers and drives conversions. Get started with ChatSites in minutes.</p>
+                
+                <div class="cta-buttons">
+                    <button class="cta-primary" data-action="try-builder">Try Building Your Own</button>
+                    <button class="cta-secondary" data-action="watch-demo">Watch Demo</button>
+                </div>
+                
+                <div class="cta-video">
+                    <div class="video-thumbnail">
+                        <img src="https://via.placeholder.com/1280x720/2d3748/f65228?text=ChatSites+Demo+Video" alt="ChatSites Demo Video">
+                        <div class="video-play">
+                            <i class="fas fa-play"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="cta-features">
+                    <div class="cta-feature">
+                        <div class="feature-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <h3 class="feature-title">Quick Setup</h3>
+                        <p class="feature-description">Get your ChatSite up and running in minutes with our intuitive no-code builder.</p>
+                    </div>
+                    
+                    <div class="cta-feature">
+                        <div class="feature-icon">
+                            <i class="fas fa-paint-brush"></i>
+                        </div>
+                        <h3 class="feature-title">Custom Branding</h3>
+                        <p class="feature-description">Match your brand with customizable colors, logos, and voice personalities.</p>
+                    </div>
+                    
+                    <div class="cta-feature">
+                        <div class="feature-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h3 class="feature-title">Analytics</h3>
+                        <p class="feature-description">Gain insights into customer interactions and optimize your conversational experience.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Video Overlay -->
+            <div class="video-overlay">
+                <div class="video-container">
+                    <div class="video-close">&times;</div>
+                    <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="ChatSites Demo Video" allowfullscreen></iframe>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <img src="images/chatsites-logo.svg" alt="ChatSites Logo">
+                    <p>ChatSites<span class="trademark">™</span></p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>Product</h4>
+                        <ul>
+                            <li><a href="#">Features</a></li>
+                            <li><a href="#">Pricing</a></li>
+                            <li><a href="#">Use Cases</a></li>
+                            <li><a href="#">Testimonials</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Resources</h4>
+                        <ul>
+                            <li><a href="#">Documentation</a></li>
+                            <li><a href="#">API</a></li>
+                            <li><a href="#">Blog</a></li>
+                            <li><a href="#">Community</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Company</h4>
+                        <ul>
+                            <li><a href="#">About Us</a></li>
+                            <li><a href="#">Careers</a></li>
+                            <li><a href="#">Contact</a></li>
+                            <li><a href="#">Press</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 ChatSites. All rights reserved.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-linkedin"></i></a>
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modal for video demo -->
+    <div id="demo-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>ChatSites Demo Video</h3>
+            <div class="video-container">
+                <iframe src="about:blank" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/main.js"></script>
+    <script src="js/portal.js"></script>
+    <script src="js/voice-interface.js"></script>
+    <script src="js/hero-portal.js"></script>
+    <script src="js/ai-assistant.js"></script>
+    <script src="js/dynamic-asset.js"></script>
+    <script src="js/use-case-cards.js"></script>
+    <script src="js/real-time-editing.js"></script>
+    <script src="js/explainer-section.js"></script>
+    <script src="js/call-to-action.js"></script>
+    <script src="js/process-explanation.js"></script>
+    <script src="js/openai-realtime-webrtc.js"></script>
+    <script src="js/speech-to-speech.js"></script>
+    <script src="js/ai-assistant-webrtc.js"></script>
+    <script src="js/portal-integration.js"></script>
+    <script src="js/openai-realtime-api.js"></script>
+</body>
+</html>
