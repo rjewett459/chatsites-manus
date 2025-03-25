@@ -262,10 +262,11 @@ function closeConnection() {
       peerConnection = null;
     }
 
-    if (audioContext) {
-      audioContext.close();
-      // We don't null window.audioContext — other files might still need it
-    }
+    if (window.audioContext) {
+  window.audioContext.close();
+  window.audioContext = null;
+}
+
 
     isConnected = false;
     return true;
