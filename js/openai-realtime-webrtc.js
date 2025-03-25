@@ -1,300 +1,178 @@
-// OpenAI Realtime API with WebRTC implementation
-// This file implements the client-side WebRTC connection to OpenAI's Realtime API
+// Speech-to-Speech functionality for ChatSites Portal
+// This file enhances the WebRTC implementation with true speech-to-speech capabilities
 
-// Global variables
-let peerConnection = null;
-let dataChannel = null;
-let audioContext = null;
-let mediaStream = null;
-let audioSender = null;
-let isConnected = false;
-let isListening = false;
+// ✅ Global-safe audioContext
+if (!window.audioContext) {
+  window.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+}
+const audioContext = window.audioContext;
 
-// Configuration
-const REALTIME_API = {
-  baseUrl: "https://api.openai.com/v1/realtime",
-  model: "gpt-4o-mini",
-  transcribeModel: "gpt-4o-mini-transcribe",
-  voice: "sage"
-};
+let audioQueue = [];
+let isPlaying = false;
 
-// Initialize the WebRTC connection to OpenAI Realtime API
-async function initializeRealtimeAPI(ephemeralKey, statusCallback, transcriptCallback, responseCallback) {
+// Initialize audio context (returns true if created here)
+function initializeAudioContext() {
+  if (!audioContext) {
+    console.warn('AudioContext is not available.');
+    return false;
+  }
+  return true;
+}
+
+// Handle incoming audio from OpenAI
+async function handleIncomingAudio(audioData) {
   try {
-    // Create audio context
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    
-    // Create a new RTCPeerConnection
-    peerConnection = new RTCPeerConnection();
-    
-    // Set up data channel for sending and receiving events
-    dataChannel = peerConnection.createDataChannel('oai-events');
-    
-    // Set up data channel event listeners
-    setupDataChannelListeners(statusCallback, transcriptCallback, responseCallback);
-    
-    // Create and set local description (offer)
-    const offer = await peerConnection.createOffer({
-      offerToReceiveAudio: true
-    });
-    await peerConnection.setLocalDescription(offer);
-    
-    // Send the offer to OpenAI and get the answer
-    const sdpResponse = await fetch(`${REALTIME_API.baseUrl}?model=${REALTIME_API.model}`, {
-      method: "POST",
-      body: peerConnection.localDescription.sdp,
-      headers: {
-        "Authorization": `Bearer ${ephemeralKey}`,
-        "Content-Type": "application/sdp"
+    const binaryString = window.atob(audioData);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+
+    const audioBuffer = await audioContext.decodeAudioData(bytes.buffer);
+
+    audioQueue.push(audioBuffer);
+
+    if (!isPlaying) {
+      playNextInQueue();
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error handling incoming audio:', error);
+    return false;
+  }
+}
+
+// Play next audio in queue
+function playNextInQueue() {
+  if (audioQueue.length === 0) {
+    isPlaying = false;
+    return;
+  }
+
+  isPlaying = true;
+  const audioBuffer = audioQueue.shift();
+
+  const source = audioContext.createBufferSource();
+  source.buffer = audioBuffer;
+  source.connect(audioContext.destination);
+
+  source.onended = playNextInQueue;
+  source.start(0);
+}
+
+// Enhanced WebRTC data channel message handler
+function enhancedDataChannelHandler(event, statusCallback, transcriptCallback, responseCallback) {
+  try {
+    const message = JSON.parse(event.data);
+    console.log("Received message:", message);
+
+    if (message.type === 'session.created') {
+      console.log("Session created:", message.session);
+    } else if (message.type === 'session.updated') {
+      console.log("Session updated:", message.session);
+    } else if (message.type === 'input_audio_buffer.speech_started') {
+      statusCallback('listening');
+    } else if (message.type === 'input_audio_buffer.speech_stopped') {
+      statusCallback('processing');
+    } else if (message.type === 'response.audio_transcript.delta') {
+      if (message.delta && message.delta.text) {
+        transcriptCallback(message.delta.text);
       }
-    });
-    
-    if (!sdpResponse.ok) {
-      throw new Error(`Failed to connect to OpenAI Realtime API: ${sdpResponse.status} ${sdpResponse.statusText}`);
-    }
-    
-    // Set the remote description (answer from OpenAI)
-    const answer = {
-      type: "answer",
-      sdp: await sdpResponse.text()
-    };
-    await peerConnection.setRemoteDescription(answer);
-    
-    // Set up ICE candidate handling
-    peerConnection.onicecandidate = (event) => {
-      if (event.candidate) {
-        console.log("New ICE candidate:", event.candidate);
+    } else if (message.type === 'response.audio.started') {
+      statusCallback('speaking');
+    } else if (message.type === 'response.audio.delta') {
+      if (message.delta && message.delta.audio) {
+        handleIncomingAudio(message.delta.audio);
       }
-    };
-    
-    // Handle connection state changes
-    peerConnection.onconnectionstatechange = () => {
-      console.log("Connection state:", peerConnection.connectionState);
-      if (peerConnection.connectionState === 'connected') {
-        isConnected = true;
-        statusCallback('connected');
-        // Update session with initial configuration
-        updateSession();
-      } else if (peerConnection.connectionState === 'disconnected' || 
-                peerConnection.connectionState === 'failed' ||
-                peerConnection.connectionState === 'closed') {
-        isConnected = false;
-        statusCallback('disconnected');
+    } else if (message.type === 'response.audio.stopped') {
+      statusCallback('ready');
+    } else if (message.type === 'response.done') {
+      statusCallback('ready');
+      if (message.response && message.response.text) {
+        responseCallback(message.response.text);
       }
+    }
+  } catch (error) {
+    console.error("Error processing WebRTC message:", error);
+  }
+}
+
+// Setup enhanced audio processing
+function setupEnhancedAudioProcessing(peerConnection, mediaStream) {
+  try {
+    initializeAudioContext();
+
+    const source = audioContext.createMediaStreamSource(mediaStream);
+    const processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+    source.connect(processor);
+    processor.connect(audioContext.destination);
+
+    processor.onaudioprocess = (e) => {
+      const inputData = e.inputBuffer.getChannelData(0);
+      // Optionally process audio here
     };
-    
-    // Handle ICE connection state changes
-    peerConnection.oniceconnectionstatechange = () => {
-      console.log("ICE connection state:", peerConnection.iceConnectionState);
-    };
-    
-    // Handle track events (receiving audio from OpenAI)
-    peerConnection.ontrack = (event) => {
-      console.log("Received track:", event.track.kind);
-      if (event.track.kind === 'audio') {
-        const audioElement = document.createElement('audio');
-        audioElement.srcObject = new MediaStream([event.track]);
-        audioElement.autoplay = true;
-        document.body.appendChild(audioElement);
-      }
-    };
-    
+
     return true;
   } catch (error) {
-    console.error("Error initializing Realtime API:", error);
-    statusCallback('error', error.message);
+    console.error('Error setting up enhanced audio processing:', error);
     return false;
   }
 }
 
-// Set up data channel event listeners
-function setupDataChannelListeners(statusCallback, transcriptCallback, responseCallback) {
-  dataChannel.onopen = () => {
-    console.log("Data channel opened");
-    statusCallback('ready');
+// Enhance the existing WebRTC implementation
+function enhanceWebRTCWithSpeechToSpeech() {
+  const originalInitialize = window.openAIRealtimeAPI.initialize;
+  const originalStartListening = window.openAIRealtimeAPI.startListening;
+
+  window.openAIRealtimeAPI.initialize = async function(ephemeralKey, statusCallback, transcriptCallback, responseCallback) {
+    initializeAudioContext();
+
+    const success = await originalInitialize(ephemeralKey, statusCallback, transcriptCallback, responseCallback);
+
+    if (success && window.openAIRealtimeAPI._dataChannel) {
+      const originalOnMessage = window.openAIRealtimeAPI._dataChannel.onmessage;
+      window.openAIRealtimeAPI._dataChannel.onmessage = (event) => {
+        enhancedDataChannelHandler(event, statusCallback, transcriptCallback, responseCallback);
+        if (originalOnMessage) originalOnMessage(event);
+      };
+    }
+
+    return success;
   };
-  
-  dataChannel.onclose = () => {
-    console.log("Data channel closed");
-    statusCallback('closed');
+
+  window.openAIRealtimeAPI.startListening = async function() {
+    const success = await originalStartListening();
+
+    if (success && window.openAIRealtimeAPI._mediaStream && window.openAIRealtimeAPI._peerConnection) {
+      setupEnhancedAudioProcessing(
+        window.openAIRealtimeAPI._peerConnection,
+        window.openAIRealtimeAPI._mediaStream
+      );
+    }
+
+    return success;
   };
-  
-  dataChannel.onerror = (error) => {
-    console.error("Data channel error:", error);
-    statusCallback('error', error.message);
-  };
-  
-  dataChannel.onmessage = (event) => {
-    try {
-      const message = JSON.parse(event.data);
-      console.log("Received message:", message);
-      
-      // Handle different event types
-      if (message.type === 'session.created') {
-        console.log("Session created:", message.session);
-      } else if (message.type === 'session.updated') {
-        console.log("Session updated:", message.session);
-      } else if (message.type === 'input_audio_buffer.speech_started') {
-        statusCallback('listening');
-      } else if (message.type === 'input_audio_buffer.speech_stopped') {
-        statusCallback('processing');
-      } else if (message.type === 'response.audio_transcript.delta') {
-        // Handle streaming transcript
-        if (message.delta && message.delta.text) {
-          transcriptCallback(message.delta.text);
-        }
-      } else if (message.type === 'response.audio.started') {
-        statusCallback('speaking');
-      } else if (message.type === 'response.audio.stopped') {
-        statusCallback('ready');
-      } else if (message.type === 'response.done') {
-        // Handle completion of response
-        statusCallback('ready');
-        if (message.response && message.response.text) {
-          responseCallback(message.response.text);
-        }
-      }
-    } catch (error) {
-      console.error("Error parsing message:", error);
-    }
-  };
+
+  window.openAIRealtimeAPI.handleIncomingAudio = handleIncomingAudio;
+  window.openAIRealtimeAPI.playNextInQueue = playNextInQueue;
+
+  console.log("🎤 Enhanced WebRTC with true speech-to-speech functionality");
+  return true;
 }
 
-// Update session with configuration
-function updateSession() {
-  if (!isConnected || !dataChannel || dataChannel.readyState !== 'open') {
-    console.error("Cannot update session: not connected");
-    return false;
-  }
-  
-  const updateEvent = {
-    type: "session.update",
-    session: {
-      voice: REALTIME_API.voice,
-      transcribe_model: REALTIME_API.transcribeModel,
-      system_instruction: "You are a helpful AI assistant for the ChatSites Portal. You provide concise, accurate information about ChatSites features and capabilities. You can assist with questions, show dynamic assets, and complete tasks like bookings or product suggestions. Keep responses friendly and professional."
-    }
-  };
-  
-  try {
-    dataChannel.send(JSON.stringify(updateEvent));
-    return true;
-  } catch (error) {
-    console.error("Error updating session:", error);
-    return false;
-  }
-}
+// Export and auto-run
+window.enhanceWebRTCWithSpeechToSpeech = enhanceWebRTCWithSpeechToSpeech;
 
-// Start listening for user's voice
-async function startListening() {
-  if (!isConnected) {
-    console.error("Cannot start listening: not connected");
-    return false;
-  }
-  
-  try {
-    // Request microphone access
-    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    
-    // Add audio track to peer connection
-    const audioTrack = mediaStream.getAudioTracks()[0];
-    audioSender = peerConnection.addTrack(audioTrack, mediaStream);
-    
-    isListening = true;
-    return true;
-  } catch (error) {
-    console.error("Error starting listening:", error);
-    return false;
-  }
-}
-
-// Stop listening
-function stopListening() {
-  if (!isListening || !mediaStream) {
-    return false;
-  }
-  
-  try {
-    // Stop all tracks
-    mediaStream.getTracks().forEach(track => track.stop());
-    
-    // Remove audio sender if it exists
-    if (audioSender) {
-      peerConnection.removeTrack(audioSender);
-      audioSender = null;
+document.addEventListener('DOMContentLoaded', () => {
+  const checkInterval = setInterval(() => {
+    if (window.openAIRealtimeAPI) {
+      clearInterval(checkInterval);
+      enhanceWebRTCWithSpeechToSpeech();
     }
-    
-    mediaStream = null;
-    isListening = false;
-    return true;
-  } catch (error) {
-    console.error("Error stopping listening:", error);
-    return false;
-  }
-}
+  }, 100);
+});
 
-// Send a text message
-function sendTextMessage(text) {
-  if (!isConnected || !dataChannel || dataChannel.readyState !== 'open') {
-    console.error("Cannot send message: not connected");
-    return false;
-  }
-  
-  const textEvent = {
-    type: "text.message",
-    text: text
-  };
-  
-  try {
-    dataChannel.send(JSON.stringify(textEvent));
-    return true;
-  } catch (error) {
-    console.error("Error sending text message:", error);
-    return false;
-  }
-}
-
-// Close the connection
-function closeConnection() {
-  try {
-    // Stop listening if active
-    if (isListening) {
-      stopListening();
-    }
-    
-    // Close data channel
-    if (dataChannel) {
-      dataChannel.close();
-      dataChannel = null;
-    }
-    
-    // Close peer connection
-    if (peerConnection) {
-      peerConnection.close();
-      peerConnection = null;
-    }
-    
-    // Close audio context
-    if (audioContext) {
-      audioContext.close();
-      audioContext = null;
-    }
-    
-    isConnected = false;
-    return true;
-  } catch (error) {
-    console.error("Error closing connection:", error);
-    return false;
-  }
-}
-
-// Export the API
-window.openAIRealtimeAPI = {
-  initialize: initializeRealtimeAPI,
-  startListening: startListening,
-  stopListening: stopListening,
-  sendTextMessage: sendTextMessage,
-  closeConnection: closeConnection
-};
-
-console.log("OpenAI Realtime API with WebRTC loaded");
+console.log("✅ Speech-to-Speech enhancement module loaded");

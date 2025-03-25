@@ -1,182 +1,287 @@
-// Client-side OpenAI Realtime API integration
-// This file implements the client-side interface for the OpenAI Realtime API
+// OpenAI Realtime API with WebRTC implementation
+// This file implements the client-side WebRTC connection to OpenAI's Realtime API
+
+// ✅ Global-safe audioContext
+if (!window.audioContext) {
+  window.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+}
+const audioContext = window.audioContext;
 
 // Global variables
-let realtimeSession = null;
-let audioContext = null;
-let mediaRecorder = null;
-let isRecording = false;
+let peerConnection = null;
+let dataChannel = null;
+let mediaStream = null;
+let audioSender = null;
+let isConnected = false;
+let isListening = false;
 
-// Initialize the OpenAI Realtime API interface
-const openAIRealtimeAPI = {
-  // Initialize the API
-  initialize: async function(messageCallback, stateCallback) {
-    console.log('Initializing OpenAI Realtime API client');
-    
-    try {
-      // Set up callbacks
-      this.messageCallback = messageCallback || function() {};
-      this.stateCallback = stateCallback || function() {};
-      
-      // Initialize audio context
-      if (!audioContext) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      
-      // Signal that initialization is complete
-      this.stateCallback('initialized');
-      return true;
-    } catch (error) {
-      console.error('Error initializing OpenAI Realtime API:', error);
-      throw error;
-    }
-  },
-  
-  // Send a text message to the API
-  sendTextMessage: async function(message) {
-    console.log('Sending text message to OpenAI Realtime API:', message);
-    
-    try {
-      this.stateCallback('sending');
-      
-      // In a production environment, this would make a request to the server
-      // which would then use the OpenAI Realtime API
-      const response = await fetch('/api/message', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ message })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        // Store session ID if provided
-        if (data.sessionId) {
-          realtimeSession = data.sessionId;
-        }
-        
-        // Call the message callback with the response
-        this.messageCallback({
-          type: 'text',
-          content: data.message,
-          voice: 'sage' // Using sage voice as requested
-        });
-        
-        this.stateCallback('received');
-        return data;
-      } else {
-        throw new Error(data.error || 'Unknown error');
-      }
-    } catch (error) {
-      console.error('Error sending text message:', error);
-      this.stateCallback('error');
-      throw error;
-    }
-  },
-  
-  // Start voice recording
-  startVoiceRecording: async function() {
-    if (isRecording) return;
-    
-    try {
-      this.stateCallback('recording');
-      
-      // Request microphone access
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      
-      // Create media recorder
-      mediaRecorder = new MediaRecorder(stream);
-      const audioChunks = [];
-      
-      // Set up event handlers
-      mediaRecorder.addEventListener('dataavailable', event => {
-        audioChunks.push(event.data);
-      });
-      
-      mediaRecorder.addEventListener('stop', async () => {
-        // Create audio blob
-        const audioBlob = new Blob(audioChunks);
-        
-        // In a production environment, this would send the audio to the server
-        // which would then use the OpenAI Realtime API for transcription
-        
-        // For now, simulate a response
-        setTimeout(() => {
-          this.messageCallback({
-            type: 'transcription',
-            content: 'This is a simulated transcription of your voice input',
-            voice: 'sage' // Using sage voice as requested
-          });
-          
-          this.stateCallback('transcribed');
-        }, 1000);
-      });
-      
-      // Start recording
-      mediaRecorder.start();
-      isRecording = true;
-    } catch (error) {
-      console.error('Error starting voice recording:', error);
-      this.stateCallback('error');
-      throw error;
-    }
-  },
-  
-  // Stop voice recording
-  stopVoiceRecording: function() {
-    if (!isRecording || !mediaRecorder) return;
-    
-    try {
-      // Stop recording
-      mediaRecorder.stop();
-      isRecording = false;
-      
-      // Stop all tracks in the stream
-      mediaRecorder.stream.getTracks().forEach(track => track.stop());
-      
-      this.stateCallback('processing');
-    } catch (error) {
-      console.error('Error stopping voice recording:', error);
-      this.stateCallback('error');
-      throw error;
-    }
-  },
-  
-  // Play audio from the API
-  playAudio: async function(audioData) {
-    try {
-      // In a production environment, this would play audio received from the server
-      // For now, use the Web Speech API for demonstration
-      const utterance = new SpeechSynthesisUtterance(audioData.content);
-      utterance.voice = speechSynthesis.getVoices().find(voice => voice.name.includes('Female')) || speechSynthesis.getVoices()[0];
-      utterance.rate = 1.0;
-      utterance.pitch = 1.0;
-      
-      speechSynthesis.speak(utterance);
-      
-      this.stateCallback('speaking');
-      
-      return new Promise((resolve) => {
-        utterance.onend = () => {
-          this.stateCallback('idle');
-          resolve();
-        };
-      });
-    } catch (error) {
-      console.error('Error playing audio:', error);
-      this.stateCallback('error');
-      throw error;
-    }
-  }
+// Configuration
+const REALTIME_API = {
+  baseUrl: "https://api.openai.com/v1/realtime",
+  model: "gpt-4o-mini",
+  transcribeModel: "gpt-4o-mini-transcribe",
+  voice: "sage"
 };
 
-// Make the API available globally
-window.openAIRealtimeAPI = openAIRealtimeAPI;
+// Initialize the WebRTC connection to OpenAI Realtime API
+async function initializeRealtimeAPI(ephemeralKey, statusCallback, transcriptCallback, responseCallback) {
+  try {
+    // Create a new RTCPeerConnection
+    peerConnection = new RTCPeerConnection();
 
-console.log('OpenAI Realtime API client loaded');
+    // Set up data channel for sending and receiving events
+    dataChannel = peerConnection.createDataChannel('oai-events');
+
+    // Set up data channel event listeners
+    setupDataChannelListeners(statusCallback, transcriptCallback, responseCallback);
+
+    // Create and set local description (offer)
+    const offer = await peerConnection.createOffer({
+      offerToReceiveAudio: true
+    });
+    await peerConnection.setLocalDescription(offer);
+
+    // Send the offer to OpenAI and get the answer
+    const sdpResponse = await fetch(`${REALTIME_API.baseUrl}?model=${REALTIME_API.model}`, {
+      method: "POST",
+      body: peerConnection.localDescription.sdp,
+      headers: {
+        "Authorization": `Bearer ${ephemeralKey}`,
+        "Content-Type": "application/sdp"
+      }
+    });
+
+    if (!sdpResponse.ok) {
+      throw new Error(`Failed to connect to OpenAI Realtime API: ${sdpResponse.status} ${sdpResponse.statusText}`);
+    }
+
+    // Set the remote description (answer from OpenAI)
+    const answer = {
+      type: "answer",
+      sdp: await sdpResponse.text()
+    };
+    await peerConnection.setRemoteDescription(answer);
+
+    // Set up ICE candidate handling
+    peerConnection.onicecandidate = (event) => {
+      if (event.candidate) {
+        console.log("New ICE candidate:", event.candidate);
+      }
+    };
+
+    // Handle connection state changes
+    peerConnection.onconnectionstatechange = () => {
+      console.log("Connection state:", peerConnection.connectionState);
+      if (peerConnection.connectionState === 'connected') {
+        isConnected = true;
+        statusCallback('connected');
+        updateSession();
+      } else if (peerConnection.connectionState === 'disconnected' || 
+                peerConnection.connectionState === 'failed' ||
+                peerConnection.connectionState === 'closed') {
+        isConnected = false;
+        statusCallback('disconnected');
+      }
+    };
+
+    // Handle ICE connection state changes
+    peerConnection.oniceconnectionstatechange = () => {
+      console.log("ICE connection state:", peerConnection.iceConnectionState);
+    };
+
+    // Handle track events (receiving audio from OpenAI)
+    peerConnection.ontrack = (event) => {
+      console.log("Received track:", event.track.kind);
+      if (event.track.kind === 'audio') {
+        const audioElement = document.createElement('audio');
+        audioElement.srcObject = new MediaStream([event.track]);
+        audioElement.autoplay = true;
+        document.body.appendChild(audioElement);
+      }
+    };
+
+    return true;
+  } catch (error) {
+    console.error("Error initializing Realtime API:", error);
+    statusCallback('error', error.message);
+    return false;
+  }
+}
+
+// Set up data channel event listeners
+function setupDataChannelListeners(statusCallback, transcriptCallback, responseCallback) {
+  dataChannel.onopen = () => {
+    console.log("Data channel opened");
+    statusCallback('ready');
+  };
+
+  dataChannel.onclose = () => {
+    console.log("Data channel closed");
+    statusCallback('closed');
+  };
+
+  dataChannel.onerror = (error) => {
+    console.error("Data channel error:", error);
+    statusCallback('error', error.message);
+  };
+
+  dataChannel.onmessage = (event) => {
+    try {
+      const message = JSON.parse(event.data);
+      console.log("Received message:", message);
+
+      // Handle different event types
+      if (message.type === 'session.created') {
+        console.log("Session created:", message.session);
+      } else if (message.type === 'session.updated') {
+        console.log("Session updated:", message.session);
+      } else if (message.type === 'input_audio_buffer.speech_started') {
+        statusCallback('listening');
+      } else if (message.type === 'input_audio_buffer.speech_stopped') {
+        statusCallback('processing');
+      } else if (message.type === 'response.audio_transcript.delta') {
+        if (message.delta && message.delta.text) {
+          transcriptCallback(message.delta.text);
+        }
+      } else if (message.type === 'response.audio.started') {
+        statusCallback('speaking');
+      } else if (message.type === 'response.audio.stopped') {
+        statusCallback('ready');
+      } else if (message.type === 'response.done') {
+        statusCallback('ready');
+        if (message.response && message.response.text) {
+          responseCallback(message.response.text);
+        }
+      }
+    } catch (error) {
+      console.error("Error parsing message:", error);
+    }
+  };
+}
+
+// Update session with configuration
+function updateSession() {
+  if (!isConnected || !dataChannel || dataChannel.readyState !== 'open') {
+    console.error("Cannot update session: not connected");
+    return false;
+  }
+
+  const updateEvent = {
+    type: "session.update",
+    session: {
+      voice: REALTIME_API.voice,
+      transcribe_model: REALTIME_API.transcribeModel,
+      system_instruction: "You are a helpful AI assistant for the ChatSites Portal. You provide concise, accurate information about ChatSites features and capabilities. You can assist with questions, show dynamic assets, and complete tasks like bookings or product suggestions. Keep responses friendly and professional."
+    }
+  };
+
+  try {
+    dataChannel.send(JSON.stringify(updateEvent));
+    return true;
+  } catch (error) {
+    console.error("Error updating session:", error);
+    return false;
+  }
+}
+
+// Start listening for user's voice
+async function startListening() {
+  if (!isConnected) {
+    console.error("Cannot start listening: not connected");
+    return false;
+  }
+
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const audioTrack = mediaStream.getAudioTracks()[0];
+    audioSender = peerConnection.addTrack(audioTrack, mediaStream);
+    isListening = true;
+    return true;
+  } catch (error) {
+    console.error("Error starting listening:", error);
+    return false;
+  }
+}
+
+// Stop listening
+function stopListening() {
+  if (!isListening || !mediaStream) {
+    return false;
+  }
+
+  try {
+    mediaStream.getTracks().forEach(track => track.stop());
+    if (audioSender) {
+      peerConnection.removeTrack(audioSender);
+      audioSender = null;
+    }
+    mediaStream = null;
+    isListening = false;
+    return true;
+  } catch (error) {
+    console.error("Error stopping listening:", error);
+    return false;
+  }
+}
+
+// Send a text message
+function sendTextMessage(text) {
+  if (!isConnected || !dataChannel || dataChannel.readyState !== 'open') {
+    console.error("Cannot send message: not connected");
+    return false;
+  }
+
+  const textEvent = {
+    type: "text.message",
+    text: text
+  };
+
+  try {
+    dataChannel.send(JSON.stringify(textEvent));
+    return true;
+  } catch (error) {
+    console.error("Error sending text message:", error);
+    return false;
+  }
+}
+
+// Close the connection
+function closeConnection() {
+  try {
+    if (isListening) {
+      stopListening();
+    }
+
+    if (dataChannel) {
+      dataChannel.close();
+      dataChannel = null;
+    }
+
+    if (peerConnection) {
+      peerConnection.close();
+      peerConnection = null;
+    }
+
+    if (audioContext) {
+      audioContext.close();
+      // We don't null window.audioContext — other files might still need it
+    }
+
+    isConnected = false;
+    return true;
+  } catch (error) {
+    console.error("Error closing connection:", error);
+    return false;
+  }
+}
+
+// Export the API
+window.openAIRealtimeAPI = {
+  initialize: initializeRealtimeAPI,
+  startListening: startListening,
+  stopListening: stopListening,
+  sendTextMessage: sendTextMessage,
+  closeConnection: closeConnection
+};
+
+console.log("✅ OpenAI Realtime API with WebRTC loaded");

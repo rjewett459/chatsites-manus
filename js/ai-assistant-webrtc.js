@@ -19,6 +19,8 @@ let statusIndicator;
 
 // Initialize the AI Assistant
 function initializeAssistant() {
+  console.log('✅ initializeAssistant called');
+
   // Get DOM elements
   assistantContainer = document.getElementById('ai-assistant');
   orb = document.getElementById('ai-orb');
@@ -27,23 +29,24 @@ function initializeAssistant() {
   micButton = document.getElementById('mic-button');
   sendButton = document.getElementById('send-button');
   statusIndicator = document.getElementById('status-indicator');
-  
-  // Add event listeners
-  micButton.addEventListener('click', toggleVoiceInput);
-  sendButton.addEventListener('click', sendTextMessage);
-  inputField.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-      sendTextMessage();
-    }
-  });
-  
+
+  // ✅ Add event listeners only if the elements exist
+  if (micButton) micButton.addEventListener('click', toggleVoiceInput);
+  if (sendButton) sendButton.addEventListener('click', sendTextMessage);
+  if (inputField) {
+    inputField.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        sendTextMessage();
+      }
+    });
+  }
+
   // Initialize the pulsating orb animation
   initializeOrb();
-  
-  // Get ephemeral key from server
+
+  // Get ephemeral key and initialize OpenAI Realtime API
   getEphemeralKey()
     .then(() => {
-      // Initialize OpenAI Realtime API with WebRTC
       return window.openAIRealtimeAPI.initialize(
         ephemeralKey,
         updateStatus,
@@ -67,19 +70,14 @@ function initializeAssistant() {
 
 // Initialize the pulsating orb animation
 function initializeOrb() {
-  // Set initial state
   updateOrbState('idle');
 }
 
-// Update the orb state based on the assistant's state
+// Update the orb state
 function updateOrbState(state) {
-  // Remove all state classes
-  orb.classList.remove('idle', 'listening', 'processing', 'speaking', 'error');
-  
-  // Add the current state class
-  orb.classList.add(state);
-  
-  // Update animation based on state
+  orb?.classList.remove('idle', 'listening', 'processing', 'speaking', 'error');
+  orb?.classList.add(state);
+
   switch (state) {
     case 'idle':
       orb.style.animation = 'pulse 2s infinite ease-in-out';
@@ -99,64 +97,60 @@ function updateOrbState(state) {
   }
 }
 
-// Get ephemeral key from server
+// Get ephemeral key from the server
 async function getEphemeralKey() {
   try {
-    // Check if we have a valid ephemeral key
     const now = Math.floor(Date.now() / 1000);
     if (ephemeralKey && ephemeralKeyExpiry && ephemeralKeyExpiry > now + 60) {
-      // Key is still valid (with 1 minute buffer)
       return;
     }
-    
-    // Request a new ephemeral key from the server
+
     const response = await fetch('/api/ephemeral-key', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       }
     });
-    
+
     if (!response.ok) {
       throw new Error(`Failed to get ephemeral key: ${response.status} ${response.statusText}`);
     }
-    
+
     const data = await response.json();
-    
+
     if (!data.success) {
       throw new Error(data.error || 'Unknown error getting ephemeral key');
     }
-    
+
     ephemeralKey = data.ephemeralKey;
     ephemeralKeyExpiry = data.expiresAt;
-    
-    console.log('Got ephemeral key, expires at:', new Date(ephemeralKeyExpiry * 1000));
+
+    console.log('🔐 Got ephemeral key, expires at:', new Date(ephemeralKeyExpiry * 1000));
   } catch (error) {
-    console.error('Error getting ephemeral key:', error);
+    console.error('❌ Error getting ephemeral key:', error);
     throw error;
   }
 }
 
 // Toggle voice input
 function toggleVoiceInput() {
+  console.log('🎙️ toggleVoiceInput called');
+
   if (currentState === 'listening') {
-    // Stop listening
     window.openAIRealtimeAPI.stopListening();
     updateStatus('processing');
   } else if (currentState === 'ready' || currentState === 'idle') {
-    // Start listening
     window.openAIRealtimeAPI.startListening()
       .then(success => {
         if (success) {
           updateStatus('listening');
-          // Clear previous transcript
           transcriptText = '';
         } else {
           updateStatus('error', 'Failed to start listening');
         }
       })
       .catch(error => {
-        console.error('Error starting voice input:', error);
+        console.error('❌ Error starting voice input:', error);
         updateStatus('error', error.message);
       });
   }
@@ -164,20 +158,13 @@ function toggleVoiceInput() {
 
 // Send text message
 function sendTextMessage() {
-  const text = inputField.value.trim();
-  
-  if (!text) {
-    return;
-  }
-  
-  // Display user message
+  const text = inputField?.value.trim();
+  if (!text) return;
+
   displayMessage('user', text);
-  
-  // Clear input field
   inputField.value = '';
-  
-  // Send message to OpenAI
   updateStatus('processing');
+
   window.openAIRealtimeAPI.sendTextMessage(text)
     .then(success => {
       if (!success) {
@@ -185,7 +172,7 @@ function sendTextMessage() {
       }
     })
     .catch(error => {
-      console.error('Error sending text message:', error);
+      console.error('❌ Error sending text message:', error);
       updateStatus('error', error.message);
     });
 }
@@ -193,11 +180,10 @@ function sendTextMessage() {
 // Update status
 function updateStatus(state, errorMessage) {
   currentState = state;
-  
-  // Update orb state
   updateOrbState(state);
-  
-  // Update status indicator
+
+  if (!statusIndicator) return;
+
   switch (state) {
     case 'idle':
       statusIndicator.textContent = 'Idle';
@@ -232,56 +218,51 @@ function updateStatus(state, errorMessage) {
 // Update transcript
 function updateTranscript(text) {
   transcriptText += text;
-  
-  // Display transcript as user message if not already displayed
-  if (currentState === 'listening' || currentState === 'processing') {
-    // Update existing message or create new one
-    const lastMessage = messageContainer.lastElementChild;
-    if (lastMessage && lastMessage.classList.contains('user-message')) {
-      const messageText = lastMessage.querySelector('.message-text');
-      messageText.textContent = transcriptText;
-    } else {
-      displayMessage('user', transcriptText);
-    }
+
+  if (!messageContainer) return;
+
+  const lastMessage = messageContainer.lastElementChild;
+  if (lastMessage && lastMessage.classList.contains('user-message')) {
+    const messageText = lastMessage.querySelector('.message-text');
+    messageText.textContent = transcriptText;
+  } else {
+    displayMessage('user', transcriptText);
   }
 }
 
-// Handle response
+// Handle assistant response
 function handleResponse(text) {
   responseText = text;
-  
+
   // Display assistant message
   displayMessage('assistant', responseText);
-  
-  // Reset for next interaction
+
+  // ✅ OPTIONAL: Uncomment this if you're NOT using OpenAI's real-time voice
+  // window.speakText(responseText);
+
   transcriptText = '';
   responseText = '';
 }
 
-// Display message
+
+// Display a message in the UI
 function displayMessage(sender, text) {
+  if (!messageContainer) return;
+
   const messageElement = document.createElement('div');
   messageElement.classList.add('message', `${sender}-message`);
-  
+
   const avatarElement = document.createElement('div');
   avatarElement.classList.add('avatar');
-  
-  if (sender === 'assistant') {
-    avatarElement.innerHTML = '<i class="fas fa-robot"></i>';
-  } else {
-    avatarElement.innerHTML = '<i class="fas fa-user"></i>';
-  }
-  
+  avatarElement.innerHTML = sender === 'assistant' ? '<i class="fas fa-robot"></i>' : '<i class="fas fa-user"></i>';
+
   const messageTextElement = document.createElement('div');
   messageTextElement.classList.add('message-text');
   messageTextElement.textContent = text;
-  
+
   messageElement.appendChild(avatarElement);
   messageElement.appendChild(messageTextElement);
-  
   messageContainer.appendChild(messageElement);
-  
-  // Scroll to bottom
   messageContainer.scrollTop = messageContainer.scrollHeight;
 }
 
@@ -291,10 +272,10 @@ function displayWelcomeMessage() {
   displayMessage('assistant', welcomeMessage);
 }
 
-// Initialize when the DOM is loaded
+// Initialize once DOM is fully loaded
 document.addEventListener('DOMContentLoaded', initializeAssistant);
 
-// Export functions for external use
+// Export for external use
 window.aiAssistant = {
   initialize: initializeAssistant,
   toggleVoiceInput: toggleVoiceInput,
