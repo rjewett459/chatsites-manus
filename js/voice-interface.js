@@ -1,12 +1,9 @@
 // Voice interface for ChatSites Portal
 
 // Wait for page load
-// Do not auto-init speech synthesis to avoid TTS overlap
-
+// Use OpenAI Realtime Voice (disables browser TTS)
 document.addEventListener('DOMContentLoaded', () => {
   initVoiceInterface();
-  // ❌ Disabled browser-based TTS to avoid voice overlap with OpenAI real-time API
-  // setupSpeechSynthesis();
 });
 
 function initVoiceInterface() {
@@ -150,9 +147,4 @@ function initVoiceInterface() {
   }
 }
 
-window.speakText = function(text) {
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = 'en-US';
-  window.speechSynthesis.speak(utterance);
-};
-
+// Removed browser TTS setupSpeechSynthesis to rely only on OpenAI Realtime Voice
