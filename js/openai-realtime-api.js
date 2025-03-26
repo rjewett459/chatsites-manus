@@ -26,8 +26,17 @@ const REALTIME_API = {
 // Initialize the WebRTC connection to OpenAI Realtime API
 async function initializeRealtimeAPI(ephemeralKey, statusCallback, transcriptCallback, responseCallback) {
   try {
-    // Create a new RTCPeerConnection
-    peerConnection = new RTCPeerConnection();
+    // ✅ Updated to include STUN/TURN ICE servers
+    peerConnection = new RTCPeerConnection({
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        {
+          urls: 'turn:openrelay.metered.ca:80',
+          username: 'openrelayproject',
+          credential: 'openrelayproject'
+        }
+      ]
+    });
 
     // Set up data channel for sending and receiving events
     dataChannel = peerConnection.createDataChannel('oai-events');
