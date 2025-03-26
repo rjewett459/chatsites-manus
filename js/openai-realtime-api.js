@@ -53,20 +53,18 @@ async function initializeRealtimeAPI(ephemeralKey, statusCallback, transcriptCal
       throw new Error(`Failed to connect to OpenAI Realtime API: ${sdpResponse.status} ${sdpResponse.statusText}`);
     }
 
-    // Get the answer SDP from OpenAI
     const answer = {
       type: "answer",
       sdp: await sdpResponse.text()
     };
 
-    // Fix: Only call setRemoteDescription if not already in 'stable' state
+    // Only set remote description if not already stable
     if (peerConnection.signalingState !== "stable" && !peerConnection.remoteDescription) {
       await peerConnection.setRemoteDescription(answer);
     } else {
-      console.warn("Skipping setRemoteDescription: already stable or set.");
+      console.warn("⚠️ Skipping setRemoteDescription: already stable or set.");
     }
 
-    // Set up ICE candidate handling
     peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
         console.log("New ICE candidate:", event.candidate);
@@ -76,9 +74,7 @@ async function initializeRealtimeAPI(ephemeralKey, statusCallback, transcriptCal
     peerConnection.onconnectionstatechange = () => {
       console.log("Connection state:", peerConnection.connectionState);
       if (peerConnection.connectionState === 'connected') {
-        isConnected = true;
         statusCallback('connected');
-        updateSession();
       } else if (['disconnected', 'failed', 'closed'].includes(peerConnection.connectionState)) {
         isConnected = false;
         statusCallback('disconnected');
@@ -109,12 +105,15 @@ async function initializeRealtimeAPI(ephemeralKey, statusCallback, transcriptCal
 // Set up data channel event listeners
 function setupDataChannelListeners(statusCallback, transcriptCallback, responseCallback) {
   dataChannel.onopen = () => {
-    console.log("Data channel opened");
+    console.log("✅ Data channel opened");
+    isConnected = true;
     statusCallback('ready');
+    updateSession(); // ✅ Only run once the connection is stable
   };
 
   dataChannel.onclose = () => {
     console.log("Data channel closed");
+    isConnected = false;
     statusCallback('closed');
   };
 
@@ -126,7 +125,7 @@ function setupDataChannelListeners(statusCallback, transcriptCallback, responseC
   dataChannel.onmessage = (event) => {
     try {
       const message = JSON.parse(event.data);
-      console.log("Received message:", message);
+      console.log("📩 Received message:", message);
 
       if (message.type === 'session.created') {
         console.log("Session created:", message.session);
@@ -156,10 +155,10 @@ function setupDataChannelListeners(statusCallback, transcriptCallback, responseC
   };
 }
 
-// Update session with configuration
+// Update session with voice + system instructions
 function updateSession() {
   if (!isConnected || !dataChannel || dataChannel.readyState !== 'open') {
-    console.error("Cannot update session: not connected");
+    console.error("❌ Cannot update session: not connected");
     return false;
   }
 
@@ -182,7 +181,7 @@ function updateSession() {
   }
 }
 
-// Start listening for user's voice
+// Start listening to user's voice
 async function startListening() {
   if (!isConnected) {
     console.error("Cannot start listening: not connected");
@@ -220,7 +219,7 @@ function stopListening() {
   }
 }
 
-// Send a text message
+// Send a text message to OpenAI
 function sendTextMessage(text) {
   if (!isConnected || !dataChannel || dataChannel.readyState !== 'open') {
     console.error("Cannot send message: not connected");
@@ -266,7 +265,7 @@ function closeConnection() {
   }
 }
 
-// Export the API
+// ✅ Export the API
 window.openAIRealtimeAPI = {
   initialize: initializeRealtimeAPI,
   startListening: startListening,
