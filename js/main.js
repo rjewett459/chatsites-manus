@@ -1,49 +1,60 @@
-// Minimal main.js for ChatSites Portal (Real-Time Voice Only)
+// Minimal main.js for ChatSites Portal (Realtime Voice-Only)
 
-// Wait for page load
-// Setup: Only handles portal activation and hands off to real-time voice
+// Wait for page load and activate portal
 
-document.addEventListener('DOMContentLoaded', function() {
-  initPortalDemo();
+document.addEventListener('DOMContentLoaded', async function () {
+  await initializeAndGreet();
 });
 
-function initPortalDemo() {
-  const activateButton = document.getElementById('activate-portal');
-  const startDemoButton = document.getElementById('start-demo');
+async function initializeAndGreet() {
   const portalWelcome = document.getElementById('portal-welcome');
   const aiAssistant = document.getElementById('ai-assistant');
 
-  // Activate portal from welcome screen
-  if (activateButton) {
-    activateButton.addEventListener('click', () => {
-      activatePortal();
-    });
+  // Show the assistant UI
+  if (portalWelcome) portalWelcome.classList.add('hidden');
+  if (aiAssistant) aiAssistant.classList.remove('hidden');
+
+  const statusBox = document.getElementById('webrtc-status');
+  if (statusBox) statusBox.textContent = '🔄 Connecting...';
+
+  // 🔑 Get your ephemeral key from your server (this is a placeholder)
+  const ephemeralKey = await fetchEphemeralKey();
+  if (!ephemeralKey) {
+    console.error("❌ Failed to get ephemeral key");
+    return;
   }
 
-  // Start demo from hero section
-  if (startDemoButton) {
-    startDemoButton.addEventListener('click', () => {
-      const portalDemo = document.querySelector('.portal-demo-container');
-      portalDemo.scrollIntoView({ behavior: 'smooth' });
-      setTimeout(() => {
-        if (portalWelcome.classList.contains('active')) {
-          activatePortal();
-        }
-      }, 1000);
-    });
-  }
-
-  function activatePortal() {
-    portalWelcome.classList.remove('active');
-    portalWelcome.classList.add('hidden');
-    aiAssistant.classList.remove('hidden');
-    aiAssistant.classList.add('active');
-
-    // Start AI voice greeting via real-time API
-    if (window.openAIRealtimeAPI && window.openAIRealtimeAPI.sendTextMessage) {
-      setTimeout(() => {
-        window.openAIRealtimeAPI.sendTextMessage("Hello! I'm your ChatSites assistant. How can I help you today?");
-      }, 600);
+  // 🧠 Initialize the OpenAI Realtime API
+  const initialized = await window.openAIRealtimeAPI.initialize(
+    ephemeralKey,
+    (status) => {
+      console.log("[Status]", status);
+      if (statusBox) statusBox.textContent = `🎯 ${status}`;
+    },
+    (partial) => {
+      console.log("[Transcript]", partial);
+    },
+    (finalResponse) => {
+      console.log("[AI Response]", finalResponse);
     }
+  );
+
+  if (!initialized) return;
+
+  // ✅ Send first message to trigger voice response
+  setTimeout(() => {
+    window.openAIRealtimeAPI.sendTextMessage("Hello! I'm your ChatSites assistant. How can I help you today?");
+  }, 600);
+}
+
+// 🔐 Replace with your own server logic
+async function fetchEphemeralKey() {
+  try {
+    const response = await fetch("/get-ephemeral-key");
+    const data = await response.json();
+    return data.key;
+  } catch (err) {
+    console.error("Error fetching ephemeral key:", err);
+    return null;
   }
 }
