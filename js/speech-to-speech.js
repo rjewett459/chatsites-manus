@@ -1,22 +1,19 @@
 // Speech-to-Speech functionality for ChatSites Portal
 // This file enhances the WebRTC implementation with true speech-to-speech capabilities
 
-// Global variables
-if (!window.audioContext) {
-  window.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-}
-const audioContext = window.audioContext;
+// ✅ Use shared global audio context (no duplicate declaration)
+const audioContext = window.audioContext || new (window.AudioContext || window.webkitAudioContext)();
+window.audioContext = audioContext;
 
 let audioQueue = [];
 let isPlaying = false;
 
-// Initialize audio context
+// Initialize audio context (optional safety check)
 function initializeAudioContext() {
-  if (!audioContext) {
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    return true;
+  if (!window.audioContext) {
+    window.audioContext = new (window.AudioContext || window.webkitAudioContext)();
   }
-  return false;
+  return true;
 }
 
 // Handle incoming audio from OpenAI
@@ -26,21 +23,21 @@ async function handleIncomingAudio(audioData) {
     const binaryString = window.atob(audioData);
     const len = binaryString.length;
     const bytes = new Uint8Array(len);
-    
+
     for (let i = 0; i < len; i++) {
       bytes[i] = binaryString.charCodeAt(i);
     }
-    
+
     // Decode audio data
     const audioBuffer = await audioContext.decodeAudioData(bytes.buffer);
-    
+
     // Add to queue and play if not already playing
     audioQueue.push(audioBuffer);
-    
+
     if (!isPlaying) {
       playNextInQueue();
     }
-    
+
     return true;
   } catch (error) {
     console.error('Error handling incoming audio:', error);
@@ -54,15 +51,15 @@ function playNextInQueue() {
     isPlaying = false;
     return;
   }
-  
+
   isPlaying = true;
   const audioBuffer = audioQueue.shift();
-  
+
   // Create audio source
   const source = audioContext.createBufferSource();
   source.buffer = audioBuffer;
   source.connect(audioContext.destination);
-  
+
   // Play audio
   source.onended = playNextInQueue;
   source.start(0);
@@ -73,7 +70,7 @@ function enhancedDataChannelHandler(event, statusCallback, transcriptCallback, r
   try {
     const message = JSON.parse(event.data);
     console.log("Received message:", message);
-    
+
     // Handle different event types
     if (message.type === 'session.created') {
       console.log("Session created:", message.session);
@@ -84,21 +81,18 @@ function enhancedDataChannelHandler(event, statusCallback, transcriptCallback, r
     } else if (message.type === 'input_audio_buffer.speech_stopped') {
       statusCallback('processing');
     } else if (message.type === 'response.audio_transcript.delta') {
-      // Handle streaming transcript
       if (message.delta && message.delta.text) {
         transcriptCallback(message.delta.text);
       }
     } else if (message.type === 'response.audio.started') {
       statusCallback('speaking');
     } else if (message.type === 'response.audio.delta') {
-      // Handle streaming audio
       if (message.delta && message.delta.audio) {
         handleIncomingAudio(message.delta.audio);
       }
     } else if (message.type === 'response.audio.stopped') {
       statusCallback('ready');
     } else if (message.type === 'response.done') {
-      // Handle completion of response
       statusCallback('ready');
       if (message.response && message.response.text) {
         responseCallback(message.response.text);
@@ -112,28 +106,19 @@ function enhancedDataChannelHandler(event, statusCallback, transcriptCallback, r
 // Setup enhanced audio processing for WebRTC
 function setupEnhancedAudioProcessing(peerConnection, mediaStream) {
   try {
-    // Initialize audio context
     initializeAudioContext();
-    
-    // Create audio processing node
+
     const source = audioContext.createMediaStreamSource(mediaStream);
     const processor = audioContext.createScriptProcessor(4096, 1, 1);
-    
-    // Connect nodes
+
     source.connect(processor);
     processor.connect(audioContext.destination);
-    
-    // Process audio
+
     processor.onaudioprocess = (e) => {
-      // Get input data
       const inputData = e.inputBuffer.getChannelData(0);
-      
-      // Here you could add additional audio processing if needed
-      // For example, noise reduction, gain control, etc.
-      
-      // For now, we'll just pass the audio through to the peer connection
+      // Optional: add custom processing
     };
-    
+
     return true;
   } catch (error) {
     console.error('Error setting up enhanced audio processing:', error);
@@ -143,20 +128,16 @@ function setupEnhancedAudioProcessing(peerConnection, mediaStream) {
 
 // Enhance the existing WebRTC implementation
 function enhanceWebRTCWithSpeechToSpeech() {
-  // Store original functions
   const originalInitialize = window.openAIRealtimeAPI.initialize;
   const originalStartListening = window.openAIRealtimeAPI.startListening;
-  
+
   // Override initialize function
   window.openAIRealtimeAPI.initialize = async function(ephemeralKey, statusCallback, transcriptCallback, responseCallback) {
-    // Initialize audio context
     initializeAudioContext();
-    
-    // Call original initialize
+
     const success = await originalInitialize(ephemeralKey, statusCallback, transcriptCallback, responseCallback);
-    
+
     if (success) {
-      // Enhance data channel message handling
       if (window.openAIRealtimeAPI._dataChannel) {
         const originalOnMessage = window.openAIRealtimeAPI._dataChannel.onmessage;
         window.openAIRealtimeAPI._dataChannel.onmessage = (event) => {
@@ -167,40 +148,36 @@ function enhanceWebRTCWithSpeechToSpeech() {
         };
       }
     }
-    
+
     return success;
   };
-  
+
   // Override startListening function
   window.openAIRealtimeAPI.startListening = async function() {
-    // Call original startListening
     const success = await originalStartListening();
-    
+
     if (success && window.openAIRealtimeAPI._mediaStream && window.openAIRealtimeAPI._peerConnection) {
-      // Setup enhanced audio processing
       setupEnhancedAudioProcessing(
         window.openAIRealtimeAPI._peerConnection,
         window.openAIRealtimeAPI._mediaStream
       );
     }
-    
+
     return success;
   };
-  
+
   // Add new functions
   window.openAIRealtimeAPI.handleIncomingAudio = handleIncomingAudio;
   window.openAIRealtimeAPI.playNextInQueue = playNextInQueue;
-  
+
   console.log("Enhanced WebRTC with true speech-to-speech functionality");
   return true;
 }
 
-// Export the enhancement function
+// Auto-enhance when loaded
 window.enhanceWebRTCWithSpeechToSpeech = enhanceWebRTCWithSpeechToSpeech;
 
-// Auto-enhance when loaded
 document.addEventListener('DOMContentLoaded', () => {
-  // Wait for the base WebRTC implementation to load
   const checkInterval = setInterval(() => {
     if (window.openAIRealtimeAPI) {
       clearInterval(checkInterval);
