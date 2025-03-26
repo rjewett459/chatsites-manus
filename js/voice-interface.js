@@ -150,7 +150,9 @@ function initVoiceInterface() {
   }
 }
 
-// ✅ Prevent any browser speech synthesis calls
 window.speakText = function(text) {
-  console.log("🔇 Browser TTS suppressed (OpenAI real-time voice in use).");
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'en-US';
+  window.speechSynthesis.speak(utterance);
 };
+
