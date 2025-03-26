@@ -1,23 +1,12 @@
-// Voice interface for ChatSites Portal
+// Voice interface for ChatSites Portal (OpenAI Real-Time Voice Only)
 
 // Wait for page load
-// Use OpenAI Realtime Voice (disables browser TTS)
+// Use OpenAI Realtime Voice (disables browser TTS & STT)
 document.addEventListener('DOMContentLoaded', () => {
   initVoiceInterface();
 });
 
 function initVoiceInterface() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    console.warn('Speech Recognition API not supported in this browser');
-    return;
-  }
-
-  const recognition = new SpeechRecognition();
-  recognition.continuous = false;
-  recognition.interimResults = true;
-  recognition.lang = 'en-US';
-
   const voiceButton = document.getElementById('voice-input-button');
   const textInput = document.getElementById('text-input');
   const sendButton = document.getElementById('send-button');
@@ -28,43 +17,18 @@ function initVoiceInterface() {
   if (voiceButton) {
     voiceButton.addEventListener('click', () => {
       if (isListening) {
-        recognition.stop();
+        window.openAIRealtimeAPI.stopListening();
+        updateUIState('idle');
+        removeListeningFeedback();
+        isListening = false;
       } else {
-        recognition.start();
-        textInput.value = '';
+        window.openAIRealtimeAPI.startListening();
         updateUIState('listening');
         addListeningFeedback();
+        isListening = true;
       }
     });
   }
-
-  recognition.onresult = (event) => {
-    const transcript = Array.from(event.results).map(result => result[0].transcript).join('');
-    textInput.value = transcript;
-    if (event.results[0].isFinal) {
-      console.log('Final transcript:', transcript);
-    } else {
-      console.log('Interim transcript:', transcript);
-    }
-  };
-
-  recognition.onend = () => {
-    isListening = false;
-    updateUIState('idle');
-    removeListeningFeedback();
-    if (textInput.value.trim() !== '') {
-      sendButton.click();
-    }
-  };
-
-  recognition.onerror = (event) => {
-    console.error('Speech recognition error:', event.error);
-    updateUIState('idle');
-    removeListeningFeedback();
-    if (event.error === 'not-allowed') {
-      alert('Microphone access is required. Please allow microphone access in your browser settings.');
-    }
-  };
 
   function updateUIState(state) {
     isListening = state === 'listening';
@@ -147,4 +111,20 @@ function initVoiceInterface() {
   }
 }
 
-// Removed browser TTS setupSpeechSynthesis to rely only on OpenAI Realtime Voice
+// ✅ Realtime WebRTC uses STUN/TURN ICE config
+if (!window.audioContext) {
+  window.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+// NOTE: Update your RTCPeerConnection to use STUN/TURN like this:
+// peerConnection = new RTCPeerConnection({
+//   iceServers: [
+//     { urls: 'stun:stun.l.google.com:19302' },
+//     {
+//       urls: 'turn:openrelay.metered.ca:80',
+//       username: 'openrelayproject',
+//       credential: 'openrelayproject'
+//     }
+//   ]
+// });
+
