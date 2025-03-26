@@ -1,25 +1,27 @@
 // Speech-to-Speech functionality for ChatSites Portal
 // This file enhances the WebRTC implementation with true speech-to-speech capabilities
 
-// ✅ Use shared global audio context (no duplicate declaration)
-const audioContext = window.audioContext || new (window.AudioContext || window.webkitAudioContext)();
-window.audioContext = audioContext;
+// Use global-safe audioContext
+if (!window.audioContext) {
+  window.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+}
+let audioContext = window.audioContext;
 
 let audioQueue = [];
 let isPlaying = false;
 
-// Initialize audio context (optional safety check)
+// Initialize audio context
 function initializeAudioContext() {
-  if (!window.audioContext) {
-    window.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    return true;
   }
-  return true;
+  return false;
 }
 
 // Handle incoming audio from OpenAI
 async function handleIncomingAudio(audioData) {
   try {
-    // Convert base64 audio data to ArrayBuffer
     const binaryString = window.atob(audioData);
     const len = binaryString.length;
     const bytes = new Uint8Array(len);
@@ -28,10 +30,7 @@ async function handleIncomingAudio(audioData) {
       bytes[i] = binaryString.charCodeAt(i);
     }
 
-    // Decode audio data
     const audioBuffer = await audioContext.decodeAudioData(bytes.buffer);
-
-    // Add to queue and play if not already playing
     audioQueue.push(audioBuffer);
 
     if (!isPlaying) {
@@ -55,12 +54,10 @@ function playNextInQueue() {
   isPlaying = true;
   const audioBuffer = audioQueue.shift();
 
-  // Create audio source
   const source = audioContext.createBufferSource();
   source.buffer = audioBuffer;
   source.connect(audioContext.destination);
 
-  // Play audio
   source.onended = playNextInQueue;
   source.start(0);
 }
@@ -71,7 +68,6 @@ function enhancedDataChannelHandler(event, statusCallback, transcriptCallback, r
     const message = JSON.parse(event.data);
     console.log("Received message:", message);
 
-    // Handle different event types
     if (message.type === 'session.created') {
       console.log("Session created:", message.session);
     } else if (message.type === 'session.updated') {
@@ -116,7 +112,7 @@ function setupEnhancedAudioProcessing(peerConnection, mediaStream) {
 
     processor.onaudioprocess = (e) => {
       const inputData = e.inputBuffer.getChannelData(0);
-      // Optional: add custom processing
+      // Placeholder for audio processing (e.g., noise reduction)
     };
 
     return true;
@@ -131,10 +127,8 @@ function enhanceWebRTCWithSpeechToSpeech() {
   const originalInitialize = window.openAIRealtimeAPI.initialize;
   const originalStartListening = window.openAIRealtimeAPI.startListening;
 
-  // Override initialize function
-  window.openAIRealtimeAPI.initialize = async function(ephemeralKey, statusCallback, transcriptCallback, responseCallback) {
+  window.openAIRealtimeAPI.initialize = async function (ephemeralKey, statusCallback, transcriptCallback, responseCallback) {
     initializeAudioContext();
-
     const success = await originalInitialize(ephemeralKey, statusCallback, transcriptCallback, responseCallback);
 
     if (success) {
@@ -152,8 +146,7 @@ function enhanceWebRTCWithSpeechToSpeech() {
     return success;
   };
 
-  // Override startListening function
-  window.openAIRealtimeAPI.startListening = async function() {
+  window.openAIRealtimeAPI.startListening = async function () {
     const success = await originalStartListening();
 
     if (success && window.openAIRealtimeAPI._mediaStream && window.openAIRealtimeAPI._peerConnection) {
@@ -166,7 +159,6 @@ function enhanceWebRTCWithSpeechToSpeech() {
     return success;
   };
 
-  // Add new functions
   window.openAIRealtimeAPI.handleIncomingAudio = handleIncomingAudio;
   window.openAIRealtimeAPI.playNextInQueue = playNextInQueue;
 
@@ -174,7 +166,6 @@ function enhanceWebRTCWithSpeechToSpeech() {
   return true;
 }
 
-// Auto-enhance when loaded
 window.enhanceWebRTCWithSpeechToSpeech = enhanceWebRTCWithSpeechToSpeech;
 
 document.addEventListener('DOMContentLoaded', () => {
