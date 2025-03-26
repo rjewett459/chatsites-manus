@@ -36,9 +36,7 @@ async function initializeRealtimeAPI(ephemeralKey, statusCallback, transcriptCal
     setupDataChannelListeners(statusCallback, transcriptCallback, responseCallback);
 
     // Create and set local description (offer)
-    const offer = await peerConnection.createOffer({
-      offerToReceiveAudio: true
-    });
+    const offer = await peerConnection.createOffer({ offerToReceiveAudio: true });
     await peerConnection.setLocalDescription(offer);
 
     // Send the offer to OpenAI and get the answer
@@ -55,12 +53,18 @@ async function initializeRealtimeAPI(ephemeralKey, statusCallback, transcriptCal
       throw new Error(`Failed to connect to OpenAI Realtime API: ${sdpResponse.status} ${sdpResponse.statusText}`);
     }
 
-    // Set the remote description (answer from OpenAI)
+    // Get the answer SDP from OpenAI
     const answer = {
       type: "answer",
       sdp: await sdpResponse.text()
     };
-    await peerConnection.setRemoteDescription(answer);
+
+    // Fix: Only call setRemoteDescription if not already in 'stable' state
+    if (peerConnection.signalingState !== "stable" && !peerConnection.remoteDescription) {
+      await peerConnection.setRemoteDescription(answer);
+    } else {
+      console.warn("Skipping setRemoteDescription: already stable or set.");
+    }
 
     // Set up ICE candidate handling
     peerConnection.onicecandidate = (event) => {
@@ -69,29 +73,23 @@ async function initializeRealtimeAPI(ephemeralKey, statusCallback, transcriptCal
       }
     };
 
-    // Handle connection state changes
     peerConnection.onconnectionstatechange = () => {
       console.log("Connection state:", peerConnection.connectionState);
       if (peerConnection.connectionState === 'connected') {
         isConnected = true;
         statusCallback('connected');
         updateSession();
-      } else if (peerConnection.connectionState === 'disconnected' || 
-                peerConnection.connectionState === 'failed' ||
-                peerConnection.connectionState === 'closed') {
+      } else if (['disconnected', 'failed', 'closed'].includes(peerConnection.connectionState)) {
         isConnected = false;
         statusCallback('disconnected');
       }
     };
 
-    // Handle ICE connection state changes
     peerConnection.oniceconnectionstatechange = () => {
       console.log("ICE connection state:", peerConnection.iceConnectionState);
     };
 
-    // Handle track events (receiving audio from OpenAI)
     peerConnection.ontrack = (event) => {
-      console.log("Received track:", event.track.kind);
       if (event.track.kind === 'audio') {
         const audioElement = document.createElement('audio');
         audioElement.srcObject = new MediaStream([event.track]);
@@ -130,7 +128,6 @@ function setupDataChannelListeners(statusCallback, transcriptCallback, responseC
       const message = JSON.parse(event.data);
       console.log("Received message:", message);
 
-      // Handle different event types
       if (message.type === 'session.created') {
         console.log("Session created:", message.session);
       } else if (message.type === 'session.updated') {
@@ -140,7 +137,7 @@ function setupDataChannelListeners(statusCallback, transcriptCallback, responseC
       } else if (message.type === 'input_audio_buffer.speech_stopped') {
         statusCallback('processing');
       } else if (message.type === 'response.audio_transcript.delta') {
-        if (message.delta && message.delta.text) {
+        if (message.delta?.text) {
           transcriptCallback(message.delta.text);
         }
       } else if (message.type === 'response.audio.started') {
@@ -149,7 +146,7 @@ function setupDataChannelListeners(statusCallback, transcriptCallback, responseC
         statusCallback('ready');
       } else if (message.type === 'response.done') {
         statusCallback('ready');
-        if (message.response && message.response.text) {
+        if (message.response?.text) {
           responseCallback(message.response.text);
         }
       }
@@ -171,7 +168,8 @@ function updateSession() {
     session: {
       voice: REALTIME_API.voice,
       transcribe_model: REALTIME_API.transcribeModel,
-      system_instruction: "You are a helpful AI assistant for the ChatSites Portal. You provide concise, accurate information about ChatSites features and capabilities. You can assist with questions, show dynamic assets, and complete tasks like bookings or product suggestions. Keep responses friendly and professional."
+      system_instruction:
+        "You are a helpful AI assistant for the ChatSites Portal. You provide concise, accurate information about ChatSites features and capabilities. You can assist with questions, show dynamic assets, and complete tasks like bookings or product suggestions. Keep responses friendly and professional."
     }
   };
 
@@ -205,9 +203,7 @@ async function startListening() {
 
 // Stop listening
 function stopListening() {
-  if (!isListening || !mediaStream) {
-    return false;
-  }
+  if (!isListening || !mediaStream) return false;
 
   try {
     mediaStream.getTracks().forEach(track => track.stop());
@@ -248,25 +244,19 @@ function sendTextMessage(text) {
 // Close the connection
 function closeConnection() {
   try {
-    if (isListening) {
-      stopListening();
-    }
-
+    if (isListening) stopListening();
     if (dataChannel) {
       dataChannel.close();
       dataChannel = null;
     }
-
     if (peerConnection) {
       peerConnection.close();
       peerConnection = null;
     }
-
     if (window.audioContext) {
-  window.audioContext.close();
-  window.audioContext = null;
-}
-
+      window.audioContext.close();
+      window.audioContext = null;
+    }
 
     isConnected = false;
     return true;
