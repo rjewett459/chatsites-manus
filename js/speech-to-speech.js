@@ -1,11 +1,16 @@
 // Speech-to-Speech functionality for ChatSites Portal
 // This file enhances the WebRTC implementation with true speech-to-speech capabilities
 
-// Use global-safe audioContext
-if (!window.audioContext) {
-  window.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+function initializeAudioContext() {
+  if (!window.audioContext) {
+    window.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    return true;
+  }
+  return false;
 }
-let audioContext = window.audioContext;
+
+const getAudioContext = () => window.audioContext;
+
 
 let audioQueue = [];
 let isPlaying = false;
@@ -30,7 +35,7 @@ async function handleIncomingAudio(audioData) {
       bytes[i] = binaryString.charCodeAt(i);
     }
 
-    const audioBuffer = await audioContext.decodeAudioData(bytes.buffer);
+    const audioBuffer = await getAudioContext().decodeAudioData(bytes.buffer);
     audioQueue.push(audioBuffer);
 
     if (!isPlaying) {
@@ -54,9 +59,9 @@ function playNextInQueue() {
   isPlaying = true;
   const audioBuffer = audioQueue.shift();
 
-  const source = audioContext.createBufferSource();
+  const source = getAudioContext().createBufferSource();
   source.buffer = audioBuffer;
-  source.connect(audioContext.destination);
+  source.connect(getAudioContext().destination);
 
   source.onended = playNextInQueue;
   source.start(0);
@@ -104,11 +109,11 @@ function setupEnhancedAudioProcessing(peerConnection, mediaStream) {
   try {
     initializeAudioContext();
 
-    const source = audioContext.createMediaStreamSource(mediaStream);
-    const processor = audioContext.createScriptProcessor(4096, 1, 1);
+    const source = getAudioContext().createMediaStreamSource(mediaStream);
+    const processor = getAudioContext().createScriptProcessor(4096, 1, 1);
 
     source.connect(processor);
-    processor.connect(audioContext.destination);
+    processor.connect(getAudioContext().destination);
 
     processor.onaudioprocess = (e) => {
       const inputData = e.inputBuffer.getChannelData(0);
