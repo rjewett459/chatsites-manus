@@ -1,10 +1,14 @@
 // OpenAI Realtime API with WebRTC implementation
 
 // ✅ Only declare audioContext if not already defined
-if (!window.audioContext) {
-  window.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-}
-const audioContext = window.audioContext;
+if (!window.__openAIRealtimeLoaded__) {
+  window.__openAIRealtimeLoaded__ = true;
+
+  if (!window.audioContext) {
+    window.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  const audioContext = window.audioContext;
+
 
 // Global variables
 let peerConnection = null;
@@ -26,11 +30,12 @@ const REALTIME_API = {
 async function initializeRealtimeAPI(ephemeralKey, statusCallback, transcriptCallback, responseCallback) {
   try {
     // ✅ Google STUN server only (simple testing)
-    peerConnection = new RTCPeerConnection({
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' }
-      ]
-    });
+peerConnection = new RTCPeerConnection({
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' }
+  ]
+});
+
 
     dataChannel = peerConnection.createDataChannel('oai-events');
     setupDataChannelListeners(statusCallback, transcriptCallback, responseCallback);
