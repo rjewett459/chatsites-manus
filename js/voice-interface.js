@@ -111,10 +111,6 @@ function initVoiceInterface() {
   }
 }
 
-// ✅ Realtime WebRTC uses STUN/TURN ICE config
-if (!window.audioContext) {
-  window.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-}
 
 // NOTE: Update your RTCPeerConnection to use STUN/TURN like this:
 // peerConnection = new RTCPeerConnection({
