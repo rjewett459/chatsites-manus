@@ -26,13 +26,30 @@ const REALTIME_API = {
 // Initialize the WebRTC connection to OpenAI Realtime API
 async function initializeRealtimeAPI(ephemeralKey, statusCallback, transcriptCallback, responseCallback) {
   try {
+    // Create a new RTCPeerConnection
     peerConnection = new RTCPeerConnection();
+
+    // Set up data channel for sending and receiving events
     dataChannel = peerConnection.createDataChannel('oai-events');
+
+    // Set up data channel event listeners
     setupDataChannelListeners(statusCallback, transcriptCallback, responseCallback);
 
+    // Create and set local description (offer)
     const offer = await peerConnection.createOffer({ offerToReceiveAudio: true });
     await peerConnection.setLocalDescription(offer);
 
+    // 🛠️ Wait until localDescription is set
+    let retryCount = 0;
+    while (!peerConnection.localDescription && retryCount < 10) {
+      await new Promise(res => setTimeout(res, 100));
+      retryCount++;
+    }
+    if (!peerConnection.localDescription) {
+      throw new Error("Local description was never set.");
+    }
+
+    // Send the offer to OpenAI and get the answer
     const sdpResponse = await fetch(`${REALTIME_API.baseUrl}?model=${REALTIME_API.model}`, {
       method: "POST",
       body: peerConnection.localDescription.sdp,
@@ -51,6 +68,7 @@ async function initializeRealtimeAPI(ephemeralKey, statusCallback, transcriptCal
       sdp: await sdpResponse.text()
     };
 
+    // Only set remote description if not already stable
     if (peerConnection.signalingState !== "stable" && !peerConnection.remoteDescription) {
       await peerConnection.setRemoteDescription(answer);
     } else {
@@ -67,7 +85,7 @@ async function initializeRealtimeAPI(ephemeralKey, statusCallback, transcriptCal
       console.log("Connection state:", peerConnection.connectionState);
       if (peerConnection.connectionState === 'connected') {
         statusCallback('connected');
-      } else if (['disconnected', 'failed', 'closed'].includes(peerConnection.connectionState)) {
+      } else if (["disconnected", "failed", "closed"].includes(peerConnection.connectionState)) {
         isConnected = false;
         statusCallback('disconnected');
       }
@@ -100,13 +118,7 @@ function setupDataChannelListeners(statusCallback, transcriptCallback, responseC
     console.log("✅ Data channel opened");
     isConnected = true;
     statusCallback('ready');
-
-    // ✅ Add delay before sending update to avoid race conditions
-    setTimeout(() => {
-      if (isConnected && dataChannel.readyState === 'open') {
-        updateSession();
-      }
-    }, 250);
+    updateSession();
   };
 
   dataChannel.onclose = () => {
