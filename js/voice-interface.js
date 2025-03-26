@@ -2,7 +2,8 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   initVoiceInterface();
-  setupSpeechSynthesis();
+  // ❌ Disabled browser-based TTS to avoid voice overlap with OpenAI real-time API
+  // setupSpeechSynthesis();
 });
 
 // Initialize voice interface
@@ -162,73 +163,7 @@ function initVoiceInterface() {
   }
 }
 
-// Set up speech synthesis
-function setupSpeechSynthesis() {
-  if (!('speechSynthesis' in window)) {
-    console.warn('Speech Synthesis API not supported');
-    return;
-  }
-
-  let voices = [];
-
-  function getVoices() {
-    voices = window.speechSynthesis.getVoices();
-  }
-
-  window.speechSynthesis.onvoiceschanged = getVoices;
-  getVoices();
-
-  window.speakText = function (text) {
-    if (!text || !voices.length) return;
-
-    window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    const preferred = voices.find(voice =>
-      voice.name.includes('female') || voice.name.includes('Samantha') || voice.name.includes('Google UK English Female')
-    );
-
-    if (preferred) utterance.voice = preferred;
-
-    utterance.volume = 1;
-    utterance.rate = 1;
-    utterance.pitch = 1;
-
-    const aiOrb = document.getElementById('ai-orb');
-    if (aiOrb) {
-      aiOrb.classList.add('speaking');
-
-      if (!document.getElementById('speaking-animation-style')) {
-        const style = document.createElement('style');
-        style.id = 'speaking-animation-style';
-        style.textContent = `
-          @keyframes speakingPulse {
-            0% { transform: scale(1); }
-            10% { transform: scale(1.05); }
-            20% { transform: scale(1); }
-            30% { transform: scale(1.03); }
-            40% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-            60% { transform: scale(1); }
-            100% { transform: scale(1); }
-          }
-          .orb.speaking {
-            animation: speakingPulse 2s infinite;
-          }
-        `;
-        document.head.appendChild(style);
-      }
-    }
-
-    if (window.portalInterface) {
-      window.portalInterface.updateState('responding');
-    }
-
-    utterance.onend = () => {
-      if (aiOrb) aiOrb.classList.remove('speaking');
-      if (window.portalInterface) window.portalInterface.updateState('idle');
-    };
-
-    window.speechSynthesis.speak(utterance);
-  };
-}
+// 🧹 Disabled browser TTS output
+window.speakText = function(text) {
+  console.log("🔇 Browser speech synthesis disabled to use OpenAI's real-time voice.");
+};
