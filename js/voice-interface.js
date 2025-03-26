@@ -1,15 +1,16 @@
 // Voice interface for ChatSites Portal
 
+// Wait for page load
+// Do not auto-init speech synthesis to avoid TTS overlap
+
 document.addEventListener('DOMContentLoaded', () => {
   initVoiceInterface();
   // ❌ Disabled browser-based TTS to avoid voice overlap with OpenAI real-time API
   // setupSpeechSynthesis();
 });
 
-// Initialize voice interface
 function initVoiceInterface() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
   if (!SpeechRecognition) {
     console.warn('Speech Recognition API not supported in this browser');
     return;
@@ -41,12 +42,8 @@ function initVoiceInterface() {
   }
 
   recognition.onresult = (event) => {
-    const transcript = Array.from(event.results)
-      .map(result => result[0].transcript)
-      .join('');
-
+    const transcript = Array.from(event.results).map(result => result[0].transcript).join('');
     textInput.value = transcript;
-
     if (event.results[0].isFinal) {
       console.log('Final transcript:', transcript);
     } else {
@@ -58,7 +55,6 @@ function initVoiceInterface() {
     isListening = false;
     updateUIState('idle');
     removeListeningFeedback();
-
     if (textInput.value.trim() !== '') {
       sendButton.click();
     }
@@ -68,7 +64,6 @@ function initVoiceInterface() {
     console.error('Speech recognition error:', event.error);
     updateUIState('idle');
     removeListeningFeedback();
-
     if (event.error === 'not-allowed') {
       alert('Microphone access is required. Please allow microphone access in your browser settings.');
     }
@@ -77,12 +72,9 @@ function initVoiceInterface() {
   function updateUIState(state) {
     isListening = state === 'listening';
     if (voiceButton) {
-      voiceButton.innerHTML = isListening
-        ? '<i class="fas fa-microphone-slash"></i>'
-        : '<i class="fas fa-microphone"></i>';
+      voiceButton.innerHTML = isListening ? '<i class="fas fa-microphone-slash"></i>' : '<i class="fas fa-microphone"></i>';
       voiceButton.classList.toggle('listening', isListening);
     }
-
     if (window.portalInterface) {
       window.portalInterface.updateState(state);
     }
@@ -90,9 +82,7 @@ function initVoiceInterface() {
 
   function addListeningFeedback() {
     if (!aiOrb) return;
-
     aiOrb.classList.add('listening-animation');
-
     if (!document.getElementById('listening-animation-style')) {
       const style = document.createElement('style');
       style.id = 'listening-animation-style';
@@ -141,17 +131,14 @@ function initVoiceInterface() {
       `;
       document.head.appendChild(style);
     }
-
     const voiceWave = document.createElement('div');
     voiceWave.className = 'voice-wave';
     for (let i = 0; i < 9; i++) {
       const bar = document.createElement('span');
       voiceWave.appendChild(bar);
     }
-
     const existingWave = aiOrb.querySelector('.voice-wave');
     if (existingWave) existingWave.remove();
-
     aiOrb.appendChild(voiceWave);
   }
 
@@ -163,7 +150,7 @@ function initVoiceInterface() {
   }
 }
 
-// 🧹 Disabled browser TTS output
+// ✅ Prevent any browser speech synthesis calls
 window.speakText = function(text) {
-  console.log("🔇 Browser speech synthesis disabled to use OpenAI's real-time voice.");
+  console.log("🔇 Browser TTS suppressed (OpenAI real-time voice in use).");
 };
