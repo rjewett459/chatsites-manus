@@ -130,13 +130,17 @@ function setupDataChannelListeners(statusCallback, transcriptCallback, responseC
     isConnected = true;
     statusCallback('ready');
 
-    // Update session with voice + system prompt
-    updateSession();
+    // 👇 First, update session (this sends voice/model/system_instruction)
+    const updated = updateSession();
+    if (!updated) {
+      console.warn("⚠️ Failed to update session");
+    }
 
-    // 🔊 Begin streaming your microphone to OpenAI
+    // 🔊 Then, start microphone streaming
     const started = await startListening();
     if (!started) {
-      console.warn("⚠️ Could not start sending audio to OpenAI.");
+      console.warn("⚠️ Could not start streaming audio — check mic permissions");
+      statusCallback('error', 'mic_stream_failed');
     }
   };
 
@@ -184,6 +188,7 @@ function setupDataChannelListeners(statusCallback, transcriptCallback, responseC
     }
   };
 }
+
 
 function updateSession() {
   if (!isConnected || !dataChannel || dataChannel.readyState !== 'open') {
