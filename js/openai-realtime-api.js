@@ -275,4 +275,6 @@ window.openAIRealtimeAPI = {
   closeConnection
 };
 
-console.log("✅ OpenAI Realtime API with WebRTC loaded");
+  console.log("✅ OpenAI Realtime API with WebRTC loaded");
+}
+
