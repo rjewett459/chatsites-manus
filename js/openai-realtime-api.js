@@ -98,17 +98,18 @@ peerConnection = new RTCPeerConnection({
 
     // ✅ Handle incoming audio and play it
     peerConnection.ontrack = (event) => {
-      if (event.track.kind === 'audio') {
-        const audioElement = document.createElement('audio');
-        audioElement.srcObject = new MediaStream([event.track]);
-        audioElement.autoplay = true;
-        audioElement.muted = false;
+  if (event.track.kind === 'audio') {
+    const audioStream = new MediaStream([event.track]);
+    const audioElement = new Audio();
+    audioElement.srcObject = audioStream;
+    audioElement.autoplay = true;
+    audioElement.controls = true; // optional UI to debug
+    audioElement.volume = 1.0;    // max volume
+    document.body.appendChild(audioElement);
+    console.log("🔊 Audio element attached to track");
+  }
+};
 
-        audioElement.addEventListener('canplaythrough', () => {
-          audioElement.play().catch(err => {
-            console.error("Audio playback error:", err);
-          });
-        });
 
         document.body.appendChild(audioElement);
         console.log("🎧 Audio track received and playing");
