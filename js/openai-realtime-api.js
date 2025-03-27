@@ -30,10 +30,16 @@ if (!window.__openAIRealtimeLoaded__) {
     try {
       // ✅ Google STUN server only (simple testing)
       peerConnection = new RTCPeerConnection({
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' }
-        ]
-      });
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    {
+      urls: 'turn:openrelay.metered.ca:80',
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    }
+  ]
+});
+
 
       dataChannel = peerConnection.createDataChannel('oai-events');
       setupDataChannelListeners(statusCallback, transcriptCallback, responseCallback);
