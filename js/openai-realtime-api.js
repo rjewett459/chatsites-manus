@@ -1,6 +1,5 @@
 // OpenAI Realtime API with WebRTC implementation
 
-// ✅ Only declare audioContext if not already defined
 if (!window.__openAIRealtimeLoaded__) {
   window.__openAIRealtimeLoaded__ = true;
 
@@ -9,7 +8,6 @@ if (!window.__openAIRealtimeLoaded__) {
   }
   const audioContext = window.audioContext;
 
-  // Global variables
   let peerConnection = null;
   let dataChannel = null;
   let mediaStream = null;
@@ -17,7 +15,6 @@ if (!window.__openAIRealtimeLoaded__) {
   let isConnected = false;
   let isListening = false;
 
-  // Config
   const REALTIME_API = {
     baseUrl: "https://api.openai.com/v1/realtime",
     model: "gpt-4o-mini",
@@ -25,21 +22,18 @@ if (!window.__openAIRealtimeLoaded__) {
     voice: "sage"
   };
 
-  // Initialize connection
   async function initializeRealtimeAPI(ephemeralKey, statusCallback, transcriptCallback, responseCallback) {
     try {
-      // ✅ Google STUN server only (simple testing)
       peerConnection = new RTCPeerConnection({
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    {
-      urls: 'turn:openrelay.metered.ca:80',
-      username: 'openrelayproject',
-      credential: 'openrelayproject'
-    }
-  ]
-});
-
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          {
+            urls: 'turn:openrelay.metered.ca:80',
+            username: 'openrelayproject',
+            credential: 'openrelayproject'
+          }
+        ]
+      });
 
       dataChannel = peerConnection.createDataChannel('oai-events');
       setupDataChannelListeners(statusCallback, transcriptCallback, responseCallback);
@@ -47,14 +41,12 @@ if (!window.__openAIRealtimeLoaded__) {
       const offer = await peerConnection.createOffer({ offerToReceiveAudio: true });
       await peerConnection.setLocalDescription(offer);
 
-      // Wait for localDescription
       let retry = 0;
       while (!peerConnection.localDescription && retry++ < 10) {
         await new Promise(res => setTimeout(res, 100));
       }
       if (!peerConnection.localDescription) throw new Error("Local description not set");
 
-      // Send SDP offer to OpenAI
       const sdpResponse = await fetch(`${REALTIME_API.baseUrl}?model=${REALTIME_API.model}`, {
         method: "POST",
         body: peerConnection.localDescription.sdp,
@@ -73,14 +65,12 @@ if (!window.__openAIRealtimeLoaded__) {
         sdp: await sdpResponse.text()
       };
 
-      // Apply answer
       if (peerConnection.signalingState !== "stable" && !peerConnection.remoteDescription) {
         await peerConnection.setRemoteDescription(answer);
       } else {
         console.warn("Skipping setRemoteDescription (already stable/set)");
       }
 
-      // Connection state logs
       peerConnection.onicecandidate = e => {
         if (e.candidate) console.log("New ICE candidate:", e.candidate);
       };
@@ -100,17 +90,16 @@ if (!window.__openAIRealtimeLoaded__) {
         console.log("ICE connection state:", peerConnection.iceConnectionState);
       };
 
-      // ✅ Handle incoming audio and play it
       peerConnection.ontrack = (event) => {
         if (event.track.kind === 'audio') {
           const audioStream = new MediaStream([event.track]);
           const audioElement = new Audio();
           audioElement.srcObject = audioStream;
           audioElement.autoplay = true;
-          audioElement.controls = true;
+          audioElement.controls = false;
           audioElement.volume = 1.0;
           document.body.appendChild(audioElement);
-          console.log("🔊 Audio element attached to track");
+          console.log("🔊 Audio track received and playing");
         }
       };
 
@@ -122,7 +111,6 @@ if (!window.__openAIRealtimeLoaded__) {
     }
   }
 
-  // Session setup
   function setupDataChannelListeners(statusCallback, transcriptCallback, responseCallback) {
     dataChannel.onopen = async () => {
       console.log("✅ Data channel open");
@@ -275,7 +263,6 @@ if (!window.__openAIRealtimeLoaded__) {
     }
   }
 
-  // Export API
   window.openAIRealtimeAPI = {
     initialize: initializeRealtimeAPI,
     startListening,
