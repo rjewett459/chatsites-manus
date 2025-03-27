@@ -125,11 +125,19 @@ peerConnection = new RTCPeerConnection({
 
 // Session setup
 function setupDataChannelListeners(statusCallback, transcriptCallback, responseCallback) {
-  dataChannel.onopen = () => {
+  dataChannel.onopen = async () => {
     console.log("✅ Data channel open");
     isConnected = true;
     statusCallback('ready');
+
+    // Update session with voice + system prompt
     updateSession();
+
+    // 🔊 Begin streaming your microphone to OpenAI
+    const started = await startListening();
+    if (!started) {
+      console.warn("⚠️ Could not start sending audio to OpenAI.");
+    }
   };
 
   dataChannel.onclose = () => {
